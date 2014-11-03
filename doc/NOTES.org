@@ -1,0 +1,12 @@
+* Design
+** Fights
+*** Shoot before another shooter to knock him down
+*** Win yields random number of bucks, [1; 10]
+*** Lose drops random number of bucks, [1; 10]
+*** In case there are not enough bucks to drop, you lose
+** Saloon
+*** Spend 5 bucks to drink Jack Daniels and become tougher: you can then take 1 shot w/o dropping money
+** Shop
+*** Not there yet
+* Bugs
+** Player can spam key presses and win always
