@@ -1,6 +1,7 @@
 extern crate time;
 
 use std::io;
+use std::num::pow;
 use time::get_time;
 
 
@@ -8,7 +9,7 @@ fn main() {
     loop {
 
         let t_comp  = time::precise_time_ns();
-        let slack   = 500000000;
+        let slack   = 500 * pow(10, 6);
         println!("I'm gonna shoot you in {}, at {}!", slack, t_comp + slack);
 
         let r = io::stdio::stdin().read_char();
