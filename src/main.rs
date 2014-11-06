@@ -1,10 +1,13 @@
 use std::io;
 use std::rand;
+use std::rand::distributions::{IndependentSample, Range};
 
 fn main() {
     loop {
-        let a = rand::random::<int>();
-        let b = rand::random::<int>();
+        let range = Range::new(1, 30);
+        let mut rng = rand::task_rng();
+        let a = range.ind_sample(&mut rng);
+        let b = range.ind_sample(&mut rng);
 
         println!("Solve this: {} + {} = ?", a, b)
 
