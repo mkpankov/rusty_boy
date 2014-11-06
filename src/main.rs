@@ -1,15 +1,44 @@
 use std::io;
 use std::rand;
+use std::rand::Rng;
 use std::rand::distributions::{IndependentSample, Range};
 
 fn main() {
     loop {
-        let range = Range::new(1, 30);
-        let mut rng = rand::task_rng();
-        let a = range.ind_sample(&mut rng);
-        let b = range.ind_sample(&mut rng);
+        #[deriving(PartialEq, Eq, PartialOrd, Ord)]
+        enum Kind {
+            Add_ = 0,
+            Sub_,
+            Mul_,
+        };
 
-        println!("Solve this: {} + {} = ?", a, b)
+        impl std::rand::Rand for Kind {
+            fn rand<R: Rng>(rng: &mut R) -> Kind {
+                let range = Range::new(1i, 3);
+                let kind_num = range.ind_sample(rng);
+                match kind_num {
+                    1 => Add_,
+                    2 => Sub_,
+                    3 => Mul_,
+                    _ => Add_, // this is silly, but as compiler pleases
+                }
+            }
+        }
+
+        let functions : &[(fn(&int, &int) -> int, &str)] =
+            &[(Add::add, "+"), (Sub::sub, "-"), (Mul::mul, "*")];
+
+        let range_operands = Range::new(1, 30);
+        let mut rng_a = rand::task_rng();
+        let mut rng_b = rand::task_rng();
+        let mut rng_kind = rand::task_rng();
+
+        let a = range_operands.ind_sample(&mut rng_a);
+        let b = range_operands.ind_sample(&mut rng_b);
+        let kind : Kind = rng_kind.gen();
+        let (function, description) = functions[kind as uint];
+
+        println!("Solve this: {} {} {} = ?", a, description, b)
 
         let result = io::stdio::stdin().read_line();
 
@@ -21,15 +50,13 @@ fn main() {
                     std::from_str::from_str(string.as_slice());
                 match maybe_c_user {
                     Some(c_user) => {
-                        let c_real = a + b;
-                        let reference;
+                        let c_real = function(&a, &b);
                         let message =
                             if c_user == c_real {
-                                "Correct!"
+                                "Correct!".to_string()
                             } else {
-                                reference = format!("Incorrect! Correct answer is {}",
-                                                    c_real);
-                                reference.as_slice()
+                                format!("Incorrect! Correct answer is {}",
+                                        c_real)
 
                             };
                         println!("{}", message);
