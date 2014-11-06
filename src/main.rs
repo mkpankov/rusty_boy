@@ -21,11 +21,13 @@ fn main() {
                     std::from_str::from_str(string.as_slice());
                 match maybe_c_user {
                     Some(c_user) => {
+                        let c_real = a + b;
                         let message =
-                            if c_user == a + b {
-                                "Correct!"
+                            if c_user == c_real {
+                                "Correct!".into_string()
                             } else {
-                                "Incorrect!"
+                                format!("Incorrect! Correct answer is {}",
+                                        c_real)
                             };
                         println!("{}", message);
                     },
