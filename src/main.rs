@@ -22,12 +22,15 @@ fn main() {
                 match maybe_c_user {
                     Some(c_user) => {
                         let c_real = a + b;
+                        let reference;
                         let message =
                             if c_user == c_real {
-                                "Correct!".into_string()
+                                "Correct!"
                             } else {
-                                format!("Incorrect! Correct answer is {}",
-                                        c_real)
+                                reference = format!("Incorrect! Correct answer is {}",
+                                                    c_real);
+                                reference.as_slice()
+
                             };
                         println!("{}", message);
                     },
