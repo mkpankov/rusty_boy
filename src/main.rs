@@ -102,7 +102,7 @@ fn main() {
 
     println!("====\n\
              Your score: {}\n\
-             Correct answers: {} ({rate} %), incorrect: {}, total: {}.\n\
+             Correct answers: {} ({rate:.0f} %), incorrect: {}, total: {}.\n\
              Average time: {} ms.",
              score, correct, incorrect, correct + incorrect, average, rate=rate);
 }
