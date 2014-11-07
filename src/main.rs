@@ -4,6 +4,8 @@ use std::rand::Rng;
 use std::rand::distributions::{IndependentSample, Range};
 
 fn main() {
+    let mut score = 0i;
+
     loop {
         #[deriving(PartialEq, Eq, PartialOrd, Ord)]
         enum Kind {
@@ -53,6 +55,7 @@ fn main() {
                         let c_real = function(&a, &b);
                         let message =
                             if c_user == c_real {
+                                score += 1;
                                 "Correct!".to_string()
                             } else {
                                 format!("Incorrect! Correct answer is {}",
@@ -69,4 +72,5 @@ fn main() {
             Err(_) => break,
         };
     }
+    println!("====\nYour score: {}", score);
 }
