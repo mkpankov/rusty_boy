@@ -5,6 +5,8 @@ use std::rand::distributions::{IndependentSample, Range};
 
 fn main() {
     let mut score = 0i;
+    let mut correct = 0i;
+    let mut incorrect = 0i;
 
     loop {
         #[deriving(PartialEq, Eq, PartialOrd, Ord)]
@@ -55,12 +57,17 @@ fn main() {
                         let c_real = function(&a, &b);
                         let message =
                             if c_user == c_real {
+                                correct += 1;
                                 score += 1;
                                 "Correct!".to_string()
                             } else {
+                                incorrect += 1;
+                                score -= 1;
+                                if score < 0 {
+                                    score = 0;
+                                };
                                 format!("Incorrect! Correct answer is {}",
                                         c_real)
-
                             };
                         println!("{}", message);
                     },
@@ -72,5 +79,6 @@ fn main() {
             Err(_) => break,
         };
     }
-    println!("====\nYour score: {}", score);
+    println!("====\nYour score: {}\nCorrect answers: {}, incorrect: {}",
+             score, correct, incorrect);
 }
