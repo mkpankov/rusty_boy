@@ -103,6 +103,7 @@ fn main() {
     println!("====\n\
              Your score: {}\n\
              Correct answers: {} ({rate:.0f} %), incorrect: {}, total: {}.\n\
-             Average time: {} ms.",
-             score, correct, incorrect, correct + incorrect, average, rate=rate);
+             Average time: {:.2f} s.",
+             score, correct, incorrect, correct + incorrect, average / 1000_f64,
+             rate=rate);
 }
