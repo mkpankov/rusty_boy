@@ -96,8 +96,13 @@ fn main() {
         num += 1;
     };
     let average : f64 = std::num::from_u64(total / num).unwrap();
+    let rate : f64 =
+        100f64 * std::num::from_int(correct).unwrap() /
+        std::num::from_int(incorrect + correct).unwrap();
 
-    println!("====\nYour score: {}\nCorrect answers: {}, incorrect: {}, total: {}.\n\
+    println!("====\n\
+             Your score: {}\n\
+             Correct answers: {} ({rate} %), incorrect: {}, total: {}.\n\
              Average time: {} ms.",
-             score, correct, incorrect, correct + incorrect, average);
+             score, correct, incorrect, correct + incorrect, average, rate=rate);
 }
