@@ -1,12 +1,17 @@
+extern crate time;
+
 use std::io;
+use std::num::pow;
 use std::rand;
 use std::rand::Rng;
 use std::rand::distributions::{IndependentSample, Range};
+use time::precise_time_ns;
 
 fn main() {
     let mut score = 0i;
     let mut correct = 0i;
     let mut incorrect = 0i;
+    let mut times : Vec<u64> = vec![];
 
     loop {
         #[deriving(PartialEq, Eq, PartialOrd, Ord)]
@@ -42,9 +47,13 @@ fn main() {
         let kind : Kind = rng_kind.gen();
         let (function, description) = functions[kind as uint];
 
-        println!("Solve this: {} {} {} = ?", a, description, b)
+        println!("Solve this: {} {} {} = ?", a, description, b);
 
+        let start = precise_time_ns();
         let result = io::stdio::stdin().read_line();
+        let end   = precise_time_ns();
+        let diff_ms = (end - start) / pow(10, 6);
+        times.push(diff_ms);
 
         match result {
             Ok(mut string) => {
@@ -66,10 +75,10 @@ fn main() {
                                 if score < 0 {
                                     score = 0;
                                 };
-                                format!("Incorrect! Correct answer is {}",
+                                format!("Incorrect! Correct answer is {}.",
                                         c_real)
                             };
-                        println!("{}", message);
+                        println!("{} Answered in {} ms", message, diff_ms);
                     },
                     None => {
                         println!("You didn't input a number. Try again.");
@@ -79,6 +88,16 @@ fn main() {
             Err(_) => break,
         };
     }
-    println!("====\nYour score: {}\nCorrect answers: {}, incorrect: {}",
-             score, correct, incorrect);
+
+    let mut total = 0;
+    let mut num = 0u64;
+    for t in times.iter() {
+        total += *t;
+        num += 1;
+    };
+    let average : f64 = std::num::from_u64(total / num).unwrap();
+
+    println!("====\nYour score: {}\nCorrect answers: {}, incorrect: {}, total: {}.\n\
+             Average time: {} ms.",
+             score, correct, incorrect, correct + incorrect, average);
 }
