@@ -20,7 +20,7 @@ fn main() {
                     1 => Add_,
                     2 => Sub_,
                     3 => Mul_,
-                    _ => Add_, // this is silly, but as compiler pleases
+                    _ => panic!("we couldn't get anything else from rng"),
                 }
             }
         }
