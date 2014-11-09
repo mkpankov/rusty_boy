@@ -15,9 +15,9 @@ fn time_multiplier(time: f64) -> f64 {
 
     let y =  match x {
         x if x < 0.25 => 5.,
-        x if x > 5.   => 1.,
-        x if x > 10.  => 0.1,
         x if x > 20.  => 0.,
+        x if x > 10.  => 0.1,
+        x if x > 5.   => 1.,
         _ => 1. / x
     };
     info!("tm({}) -> {}", x, y)
