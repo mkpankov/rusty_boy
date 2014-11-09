@@ -56,11 +56,10 @@ fn main() {
         times.push(diff_ms);
 
         match result {
-            Ok(mut string) => {
-                let n = string.len() - 1;
-                string.remove(n);
+            Ok(string) => {
+                let number = string.as_slice().trim_chars(['\r', '\n'].as_slice());
                 let maybe_c_user : Option<int> =
-                    std::from_str::from_str(string.as_slice());
+                    std::from_str::from_str(number);
                 match maybe_c_user {
                     Some(c_user) => {
                         let c_real = function(&a, &b);
