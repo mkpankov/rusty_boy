@@ -1,3 +1,6 @@
+#![feature(phase)]
+#[phase(plugin, link)] extern crate log;
+
 extern crate time;
 
 use std::io;
@@ -10,11 +13,14 @@ use time::precise_time_ns;
 fn time_multiplier(time: f64) -> f64 {
     let x = time;
 
-    match x {
+    let y =  match x {
         x if x < 0.25 => 5.,
         x if x > 5.   => 1.,
         _ => 1. / x
-    }
+    };
+    info!("tm({}) -> {}", x, y)
+
+    y
 }
 
 fn full_multiplier(time: int) -> int {
@@ -87,16 +93,18 @@ fn main() {
                         let message =
                             if c_user == c_real {
                                 correct += 1;
-                                score += 1000 * full_multiplier(diff_s_int);
-                                "Correct!".to_string()
+                                let pending = 1000 * full_multiplier(diff_s_int);
+                                score += pending;
+                                format!("Correct! {} points!", pending)
                             } else {
                                 incorrect += 1;
-                                score -= 1;
+                                let pending = 1000;
+                                score -= pending;
                                 if score < 0 {
                                     score = 0;
                                 };
-                                format!("Incorrect! Correct answer is {}.",
-                                        c_real)
+                                format!("Incorrect! -{} points. Correct answer is {}.",
+                                        pending, c_real)
                             };
                         println!("{} Answered in {} ms", message, diff_ms);
                     },
