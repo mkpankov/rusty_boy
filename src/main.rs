@@ -101,12 +101,18 @@ fn main() {
                                 if combo > max_combo {
                                     max_combo = combo;
                                 }
+                                let mult = full_multiplier(diff_s_int);
+                                let explanation = if mult == 0 {
+                                    "(timeout)"
+                                } else {
+                                    ""
+                                };
                                 let pending =
-                                    1000 * full_multiplier(diff_s_int);
+                                    1000 * mult;
                                 let combed = pending * combo;
                                 score += combed;
-                                format!("  Correct! {:+8}×{:02} = {:+10}!",
-                                        pending, combo, combed)
+                                format!("  Correct! {:+8}×{:02} = {:+10}! {}",
+                                        pending, combo, combed, explanation)
                             } else {
                                 incorrect += 1;
                                 combo = 0;
@@ -118,7 +124,7 @@ fn main() {
                                 format!("Incorrect! {:+8}^W {}.",
                                         pending, c_real)
                             };
-                        println!("{:36}{:44}", message, score);
+                        println!("{:48}{:32}", message, score);
                         info!(" {} ms", diff_ms);
                     },
                     None => {
