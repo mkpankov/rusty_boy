@@ -16,6 +16,8 @@ fn time_multiplier(time: f64) -> f64 {
     let y =  match x {
         x if x < 0.25 => 5.,
         x if x > 5.   => 1.,
+        x if x > 10.  => 0.1,
+        x if x > 20.  => 0.,
         _ => 1. / x
     };
     info!("tm({}) -> {}", x, y)
@@ -31,6 +33,8 @@ fn full_multiplier(time: int) -> int {
 
 fn main() {
     let mut score = 0i;
+    let mut combo = 0i;
+    let mut max_combo = 0i;
     let mut correct = 0i;
     let mut incorrect = 0i;
     let mut times : Vec<u64> = vec![];
@@ -93,17 +97,25 @@ fn main() {
                         let message =
                             if c_user == c_real {
                                 correct += 1;
-                                let pending = 1000 * full_multiplier(diff_s_int);
-                                score += pending;
-                                format!("  Correct! {:+8}!", pending)
+                                combo += 1;
+                                if combo > max_combo {
+                                    max_combo = combo;
+                                }
+                                let pending =
+                                    1000 * full_multiplier(diff_s_int);
+                                let combed = pending * combo;
+                                score += combed;
+                                format!("  Correct! {:+8}×{:02} = {:+10}!",
+                                        pending, combo, combed)
                             } else {
                                 incorrect += 1;
+                                combo = 0;
                                 let pending = -1000;
                                 score += pending;
                                 if score < 0 {
                                     score = 0;
                                 };
-                                format!("Incorrect! {:+8}^ {}.",
+                                format!("Incorrect! {:+8}^W {}.",
                                         pending, c_real)
                             };
                         println!("{:36}{:44}", message, score);
