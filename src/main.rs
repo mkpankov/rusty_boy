@@ -95,18 +95,19 @@ fn main() {
                                 correct += 1;
                                 let pending = 1000 * full_multiplier(diff_s_int);
                                 score += pending;
-                                format!("Correct! {} points!", pending)
+                                format!("  Correct! {:+8}!", pending)
                             } else {
                                 incorrect += 1;
-                                let pending = 1000;
-                                score -= pending;
+                                let pending = -1000;
+                                score += pending;
                                 if score < 0 {
                                     score = 0;
                                 };
-                                format!("Incorrect! -{} points. Correct answer is {}.",
+                                format!("Incorrect! {:+8}^ {}.",
                                         pending, c_real)
                             };
-                        println!("{} Answered in {} ms", message, diff_ms);
+                        println!("{:36}{:44}", message, score);
+                        info!(" {} ms", diff_ms);
                     },
                     None => {
                         println!("You didn't input a number. Try again.");
