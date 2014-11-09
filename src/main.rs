@@ -7,6 +7,22 @@ use std::rand::Rng;
 use std::rand::distributions::{IndependentSample, Range};
 use time::precise_time_ns;
 
+fn time_multiplier(time: f64) -> f64 {
+    let x = time;
+
+    match x {
+        x if x < 0.25 => 5.,
+        x if x > 5.   => 1.,
+        _ => 1. / x
+    }
+}
+
+fn full_multiplier(time: int) -> int {
+    let tm = time_multiplier(std::num::from_int(time).unwrap());
+    std::num::from_f64(
+        std::num::Float::round (1000. * tm)).unwrap()
+}
+
 fn main() {
     let mut score = 0i;
     let mut correct = 0i;
@@ -47,26 +63,31 @@ fn main() {
         let kind : Kind = rng_kind.gen();
         let (function, description) = functions[kind as uint];
 
-        println!("Solve this: {} {} {} = ?", a, description, b);
+        print!("Solve this: {} {} {} = ", a, description, b);
 
         let start = precise_time_ns();
         let result = io::stdio::stdin().read_line();
         let end   = precise_time_ns();
         let diff_ms = (end - start) / pow(10, 6);
+        let diff_s  = (end - start) / pow(10, 9);
+        let diff_s_int = std::num::from_u64(diff_s).unwrap();
         times.push(diff_ms);
 
         match result {
             Ok(string) => {
-                let number = string.as_slice().trim_chars(['\r', '\n'].as_slice());
+                let trimmed = string.as_slice().trim_chars(['\r', '\n'].as_slice());
+                if trimmed == "q" {
+                    break;
+                }
                 let maybe_c_user : Option<int> =
-                    std::from_str::from_str(number);
+                    std::from_str::from_str(trimmed);
                 match maybe_c_user {
                     Some(c_user) => {
                         let c_real = function(&a, &b);
                         let message =
                             if c_user == c_real {
                                 correct += 1;
-                                score += 1;
+                                score += 1000 * full_multiplier(diff_s_int);
                                 "Correct!".to_string()
                             } else {
                                 incorrect += 1;
