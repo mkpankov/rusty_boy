@@ -26,9 +26,10 @@ fn time_multiplier(time: f64) -> f64 {
 }
 
 fn full_multiplier(time: int) -> int {
-    let tm = time_multiplier(std::num::from_int(time).unwrap());
-    std::num::from_f64(
-        std::num::Float::round (1000. * tm)).unwrap()
+    let tm =
+        time_multiplier(from_int(time).expect("Time of trial can't be converted to f64"));
+    from_f64(
+        std::num::Float::round (1000. * tm)).expect("Full multiplier can't be converted to int")
 }
 
 fn main() {
@@ -64,8 +65,8 @@ fn main() {
             &[(Add::add, "+"), (Sub::sub, "-"), (Mul::mul, "*")];
 
         let range_operands = Range::new(1, 30);
-        let mut rng_a = rand::task_rng();
-        let mut rng_b = rand::task_rng();
+        let mut rng_a =    rand::task_rng();
+        let mut rng_b =    rand::task_rng();
         let mut rng_kind = rand::task_rng();
 
         let a = range_operands.ind_sample(&mut rng_a);
@@ -80,7 +81,7 @@ fn main() {
         let end   = precise_time_ns();
         let diff_ms = (end - start) / pow(10, 6);
         let diff_s  = (end - start) / pow(10, 9);
-        let diff_s_int = std::num::from_u64(diff_s).unwrap();
+        let diff_s_int = from_u64(diff_s).expect("Time of trial can't be converted to int");
         times.push(diff_ms);
 
         match result {
