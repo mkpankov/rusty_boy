@@ -151,6 +151,6 @@ fn main() {
              Your score: {}\n\
              Correct answers: {} ({rate:.0f} %), incorrect: {}, total: {}.\n\
              Average time: {:.2f} s.",
-             score, correct, incorrect, correct + incorrect, average / 1000_f64,
+             score, correct, incorrect, correct + incorrect, average / 1000.,
              rate=rate);
 }
