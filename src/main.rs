@@ -4,7 +4,7 @@
 extern crate time;
 
 use std::io;
-use std::num::pow;
+use std::num::{pow, from_int, from_u64, from_f64};
 use std::rand;
 use std::rand::Rng;
 use std::rand::distributions::{IndependentSample, Range};
@@ -143,13 +143,14 @@ fn main() {
         num += 1;
     };
     let total_time_f64 : f64 =
-        std::num::from_u64(total).expect("Total time can't be expressed in f64");
+        from_u64(total).expect("Total time can't be converted to f64");
     let number_of_tries_f64 : f64 =
-        std::num::from_u64(num).expect("Number of tries can't be expressed in f64");
+        from_u64(num).expect("Number of tries can't be converted to f64");
     let average_time : f64 = total_time_f64 / number_of_tries_f64;
-    let rate : f64 =
-        100f64 * std::num::from_int(correct).unwrap() /
-        std::num::from_int(incorrect + correct).unwrap();
+    let total_trials = incorrect + correct;
+    let rate : f64 = 100.
+      * from_int(correct)     .expect("Number of correct trials can't be converted to f64")
+      / from_int(total_trials).expect("Total number of trials can't be converted to f64");
 
     println!("====\n\
              Your score: {}\n\
