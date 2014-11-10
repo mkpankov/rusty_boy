@@ -142,7 +142,11 @@ fn main() {
         total += *t;
         num += 1;
     };
-    let average : f64 = std::num::from_u64(total / num).unwrap();
+    let total_time_f64 : f64 =
+        std::num::from_u64(total).expect("Total time can't be expressed in f64");
+    let number_of_tries_f64 : f64 =
+        std::num::from_u64(num).expect("Number of tries can't be expressed in f64");
+    let average_time : f64 = total_time_f64 / number_of_tries_f64;
     let rate : f64 =
         100f64 * std::num::from_int(correct).unwrap() /
         std::num::from_int(incorrect + correct).unwrap();
@@ -151,6 +155,6 @@ fn main() {
              Your score: {}\n\
              Correct answers: {} ({rate:.0f} %), incorrect: {}, total: {}.\n\
              Average time: {:.2f} s.",
-             score, correct, incorrect, correct + incorrect, average / 1000.,
+             score, correct, incorrect, correct + incorrect, average_time / 1000.,
              rate=rate);
 }
