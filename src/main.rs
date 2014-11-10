@@ -74,7 +74,7 @@ fn main() {
         let kind : Kind = rng_kind.gen();
         let (function, description) = functions[kind as uint];
 
-        print!("Solve this: {} {} {} = ", a, description, b);
+        print!("□   {} {} {} = ", a, description, b);
 
         let start = precise_time_ns();
         let result = io::stdio::stdin().read_line();
@@ -112,7 +112,7 @@ fn main() {
                                     1000 * mult;
                                 let combed = pending * combo;
                                 score += combed;
-                                format!("  Correct! {:+8}×{:02} = {:+10}! {}",
+                                format!("✓ {:+8}×{:02} = {:+10}! {}",
                                         pending, combo, combed, explanation)
                             } else {
                                 incorrect += 1;
@@ -122,7 +122,7 @@ fn main() {
                                 if score < 0 {
                                     score = 0;
                                 };
-                                format!("Incorrect! {:+8}^W {}.",
+                                format!("✗ {:+8}^W {}.",
                                         pending, c_real)
                             };
                         println!("{:48}{:32}", message, score);
