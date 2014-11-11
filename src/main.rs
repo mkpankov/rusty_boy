@@ -82,7 +82,6 @@ fn main() {
         let diff_ms = (end - start) / pow(10, 6);
         let diff_s  = (end - start) / pow(10, 9);
         let diff_s_int = from_u64(diff_s).expect("Time of trial can't be converted to int");
-        times.push(diff_ms);
 
         match result {
             Ok(string) => {
@@ -90,6 +89,7 @@ fn main() {
                 if trimmed == "q" {
                     break;
                 }
+                times.push(diff_ms);
                 let maybe_c_user : Option<int> =
                     std::from_str::from_str(trimmed);
                 match maybe_c_user {
