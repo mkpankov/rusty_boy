@@ -32,10 +32,19 @@ fn full_multiplier(time: int) -> int {
         std::num::Float::round (1000. * tm)).expect("Full multiplier can't be converted to int")
 }
 
+#[allow(dead_code)]
 fn compute_mean(times: Vec<u64>) -> f64 {
     let n : f64 = from_uint(times.len()).unwrap();
     let sum : f64 = from_u64(times.iter().fold(0, |a, &e| a + e)).unwrap();
     sum / n
+}
+
+fn compute_median(mut times: Vec<u64>) -> f64 {
+    times.sort();
+    match times.len() {
+        n if n % 2 == 0 => from_u64( (times[n/2] + times[n/2 - 1]) / 2 ).unwrap(),
+        n               => from_u64(  times[n/2] ).unwrap(),
+    }
 }
 
 fn main() {
@@ -143,8 +152,8 @@ fn main() {
         };
     }
 
-    let average_time : f64 = if times.len() != 0 {
-        compute_mean(times)
+    let time_stat : f64 = if times.len() != 0 {
+        compute_median(times)
     } else {
         0.
     };
@@ -160,7 +169,7 @@ fn main() {
     println!("====\n\
              Your score: {}\n\
              Correct answers: {} ({rate:.0f} %), incorrect: {}, total: {}.\n\
-             Average time: {:.2f} s.",
-             score, correct, incorrect, correct + incorrect, average_time / 1000.,
+             Median time: {:.2f} s.",
+             score, correct, incorrect, correct + incorrect, time_stat / 1000.,
              rate=rate);
 }
