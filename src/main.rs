@@ -147,11 +147,19 @@ fn main() {
         from_u64(total).expect("Total time can't be converted to f64");
     let number_of_tries_f64 : f64 =
         from_u64(num).expect("Number of tries can't be converted to f64");
-    let average_time : f64 = total_time_f64 / number_of_tries_f64;
+    let average_time : f64 = if num != 0 {
+        total_time_f64 / number_of_tries_f64
+    } else {
+        0.
+    };
     let total_trials = incorrect + correct;
-    let rate : f64 = 100.
+    let rate : f64 = if total_trials != 0 {
+        100.
       * from_int(correct)     .expect("Number of correct trials can't be converted to f64")
-      / from_int(total_trials).expect("Total number of trials can't be converted to f64");
+      / from_int(total_trials).expect("Total number of trials can't be converted to f64")
+    } else {
+        0.
+    };
 
     println!("====\n\
              Your score: {}\n\
