@@ -4,7 +4,7 @@
 extern crate time;
 
 use std::io;
-use std::num::{pow, from_int, from_u64, from_f64};
+use std::num::{pow, from_int, from_uint, from_u64, from_f64};
 use std::rand;
 use std::rand::Rng;
 use std::rand::distributions::{IndependentSample, Range};
@@ -30,6 +30,12 @@ fn full_multiplier(time: int) -> int {
         time_multiplier(from_int(time).expect("Time of trial can't be converted to f64"));
     from_f64(
         std::num::Float::round (1000. * tm)).expect("Full multiplier can't be converted to int")
+}
+
+fn compute_mean(times: Vec<u64>) -> f64 {
+    let n : f64 = from_uint(times.len()).unwrap();
+    let sum : f64 = from_u64(times.iter().fold(0, |a, &e| a + e)).unwrap();
+    sum / n
 }
 
 fn main() {
@@ -137,18 +143,8 @@ fn main() {
         };
     }
 
-    let mut total = 0;
-    let mut num = 0u64;
-    for t in times.iter() {
-        total += *t;
-        num += 1;
-    };
-    let total_time_f64 : f64 =
-        from_u64(total).expect("Total time can't be converted to f64");
-    let number_of_tries_f64 : f64 =
-        from_u64(num).expect("Number of tries can't be converted to f64");
-    let average_time : f64 = if num != 0 {
-        total_time_f64 / number_of_tries_f64
+    let average_time : f64 = if times.len() != 0 {
+        compute_mean(times)
     } else {
         0.
     };
