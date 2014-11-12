@@ -127,8 +127,9 @@ fn main() {
                                     1000 * mult;
                                 let combed = pending * combo;
                                 score += combed;
-                                format!("✓ {:+8}×{:02} = {:+10}! {}",
-                                        pending, combo, combed, explanation)
+                                format!("{green}✓{reset} {:+8}×{:02} = {:+10}! {}",
+                                        pending, combo, combed, explanation,
+                                        green="\x1b[0;32m", reset="\x1b[0m")
                             } else {
                                 incorrect += 1;
                                 combo = 0;
@@ -137,8 +138,9 @@ fn main() {
                                 if score < 0 {
                                     score = 0;
                                 };
-                                format!("✗ {:+8}^W {}.",
-                                        pending, c_real)
+                                format!("{red}✗{reset} {:+8}^W {}.",
+                                        pending, c_real,
+                                        red="\x1b[0;31m", reset="\x1b[0m")
                             };
                         println!("{:48}{:32}", message, score);
                         info!(" {} ms", diff_ms);
