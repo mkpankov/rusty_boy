@@ -1,6 +1,7 @@
 #![feature(phase)]
 #[phase(plugin, link)] extern crate log;
 
+extern crate term;
 extern crate time;
 
 use std::io;
@@ -105,6 +106,8 @@ fn main() {
                     break;
                 }
                 times.push(diff_ms);
+                let color;
+                let mark;
                 let maybe_c_user : Option<int> =
                     std::from_str::from_str(trimmed);
                 match maybe_c_user {
@@ -127,9 +130,10 @@ fn main() {
                                     1000 * mult;
                                 let combed = pending * combo;
                                 score += combed;
-                                format!("{green}✓{reset} {:+8}×{:02} = {:+10}! {}",
-                                        pending, combo, combed, explanation,
-                                        green="\x1b[0;32m", reset="\x1b[0m")
+                                color = term::color::GREEN;
+                                mark = "✓";
+                                format!(" {:+8}×{:02} = {:+10}! {}",
+                                        pending, combo, combed, explanation)
                             } else {
                                 incorrect += 1;
                                 combo = 0;
@@ -138,11 +142,23 @@ fn main() {
                                 if score < 0 {
                                     score = 0;
                                 };
-                                format!("{red}✗{reset} {:+8}^W {}.",
-                                        pending, c_real,
-                                        red="\x1b[0;31m", reset="\x1b[0m")
+                                color = term::color::RED;
+                                mark = "✗";
+                                format!(" {:+8}^W {}.",
+                                        pending, c_real)
                             };
-                        println!("{:48}{:32}", message, score);
+                        let maybe_term = term::stdout();
+
+                        if maybe_term.is_some() {
+                            let mut term = term::stdout().unwrap();
+                            term.fg(color).unwrap();
+                            (write!(term, "{:1}", mark)).unwrap();
+                            term.reset().unwrap();
+                        } else {
+                            print!("{:1}", mark);
+                        }
+
+                        println!("{:47}{:32}", message, score);
                         info!(" {} ms", diff_ms);
                     },
                     None => {
