@@ -26,7 +26,7 @@ fn time_multiplier(time: f64) -> f64 {
     y
 }
 
-fn full_multiplier(time: int) -> int {
+fn full_multiplier(time: int) -> uint {
     let tm =
         time_multiplier(from_int(time).expect("Time of trial can't be converted to f64"));
     from_f64(
@@ -49,12 +49,13 @@ fn compute_median(mut times: Vec<u64>) -> f64 {
 }
 
 fn main() {
-    let mut score = 0i;
-    let mut combo = 0i;
-    let mut max_combo = 0i;
-    let mut correct = 0i;
-    let mut incorrect = 0i;
+    let mut score = 0u;
+    let mut combo = 0u;
+    let mut max_combo = 0u;
+    let mut correct = 0u;
+    let mut incorrect = 0u;
     let mut times : Vec<u64> = vec![];
+    let mut attempts = 0u;
 
     loop {
         #[deriving(PartialEq, Eq, PartialOrd, Ord)]
@@ -117,6 +118,7 @@ fn main() {
                             if c_user == c_real {
                                 correct += 1;
                                 combo += 1;
+                                attempts += 1;
                                 if combo > max_combo {
                                     max_combo = combo;
                                 }
@@ -126,8 +128,8 @@ fn main() {
                                 } else {
                                     ""
                                 };
-                                let pending =
-                                    1000 * mult;
+                                let pending : uint =
+                                    1000u * mult;
                                 let combed = pending * combo;
                                 score += combed;
                                 color = term::color::GREEN;
@@ -137,11 +139,9 @@ fn main() {
                             } else {
                                 incorrect += 1;
                                 combo = 0;
+                                attempts += 1;
                                 let pending = -1000;
                                 score += pending;
-                                if score < 0 {
-                                    score = 0;
-                                };
                                 color = term::color::RED;
                                 mark = "✗";
                                 format!(" {:+8}^W {}.",
@@ -168,6 +168,9 @@ fn main() {
             },
             Err(_) => break,
         };
+        if attempts >= 10 {
+            break;
+        }
     }
 
     let time_stat : f64 = if times.len() != 0 {
@@ -178,8 +181,8 @@ fn main() {
     let total_trials = incorrect + correct;
     let rate : f64 = if total_trials != 0 {
         100.
-      * from_int(correct)     .expect("Number of correct trials can't be converted to f64")
-      / from_int(total_trials).expect("Total number of trials can't be converted to f64")
+      * from_uint(correct)     .expect("Number of correct trials can't be converted to f64")
+      / from_uint(total_trials).expect("Total number of trials can't be converted to f64")
     } else {
         0.
     };
