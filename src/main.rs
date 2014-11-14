@@ -30,7 +30,7 @@ fn full_multiplier(time: int) -> uint {
     let tm =
         time_multiplier(from_int(time).expect("Time of trial can't be converted to f64"));
     from_f64(
-        std::num::Float::round (1000. * tm)).expect("Full multiplier can't be converted to int")
+        std::num::Float::round (10. * tm)).expect("Full multiplier can't be converted to int")
 }
 
 #[allow(dead_code)]
