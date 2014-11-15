@@ -193,20 +193,32 @@ fn main() {
              Median time: {:.2f} s.",
              score, correct, incorrect, correct + incorrect, time_stat / 1000.,
              rate=rate);
+
+    let recs = read_records();
+    process_records(&recs);
+    write_records(recs);
 }
 
 #[allow(dead_code)]
-fn read_records() {
+fn read_records() -> Vec<uint> {
     use std::io::BufferedReader;
     use std::io::File;
 
     let path = Path::new("records");
     let mut file = BufferedReader::new(File::open(&path));
     let lines: Vec<String> = file.lines().map(|x| x.unwrap()).collect();
+
+    // TODO: Perform real parsing of file
+    let recs : Vec<uint> = vec![];
+    recs
+}
+
+fn process_records(mut recs: & Vec<uint>) {
+    // TODO: Drop the lowest record
 }
 
 #[allow(dead_code)]
-fn write_records() {
+fn write_records(recs: Vec<uint>) {
     use std::io::File;
 
     let mut file = File::create(&Path::new("records"));
