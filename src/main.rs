@@ -194,3 +194,21 @@ fn main() {
              score, correct, incorrect, correct + incorrect, time_stat / 1000.,
              rate=rate);
 }
+
+#[allow(dead_code)]
+fn read_records() {
+    use std::io::BufferedReader;
+    use std::io::File;
+
+    let path = Path::new("records");
+    let mut file = BufferedReader::new(File::open(&path));
+    let lines: Vec<String> = file.lines().map(|x| x.unwrap()).collect();
+}
+
+#[allow(dead_code)]
+fn write_records() {
+    use std::io::File;
+
+    let mut file = File::create(&Path::new("records"));
+    file.write(b"hello, file!\n");
+}
