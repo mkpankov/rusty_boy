@@ -1,5 +1,7 @@
 #![feature(phase)]
 #[phase(plugin, link)] extern crate log;
+#[phase(plugin)] extern crate scan;
+extern crate scan_util;
 
 extern crate term;
 extern crate time;
@@ -199,28 +201,59 @@ fn main() {
     write_records(recs);
 }
 
-#[allow(dead_code)]
-fn read_records() -> Vec<uint> {
+#[deriving(Show)]
+struct Record {
+    points: uint,
+    player: String,
+}
+
+
+fn read_records() -> Vec<Record> {
     use std::io::BufferedReader;
     use std::io::File;
 
     let path = Path::new("records");
     let mut file = BufferedReader::new(File::open(&path));
-    let lines: Vec<String> = file.lines().map(|x| x.unwrap()).collect();
+    let mut records: Vec<Record> = vec![];
 
-    // TODO: Perform real parsing of file
-    let recs : Vec<uint> = vec![];
-    recs
+    loop {
+        let record : Record;
+        let res = scanln_from! {
+            &mut file,
+            "player: \"" player: &str "\", points: \"" points: uint "\"" => {
+                record = Record { player : player.to_string(),
+                                  points : points };
+                records.push(record)
+            },
+        };
+        match res {
+            Ok(_) => {
+                info!("Read and parsed a record.");
+            },
+            Err(_) => break,
+        }
+    }
+
+    records
 }
 
-fn process_records(mut recs: & Vec<uint>) {
+
+fn process_records(mut recs: & Vec<Record>) {
     // TODO: Drop the lowest record
 }
 
-#[allow(dead_code)]
-fn write_records(recs: Vec<uint>) {
+
+fn write_records(recs: Vec<Record>) {
     use std::io::File;
 
     let mut file = File::create(&Path::new("records"));
-    file.write(b"hello, file!\n");
+    for r in recs.iter() {
+        match r {
+            &Record { ref player, points } => {
+                let line = format!("player: \"{:s}\", points: \"{:u}\"\n",
+                                   *player, points);
+                file.write(line.as_bytes()).unwrap();
+            }
+        }
+    }
 }

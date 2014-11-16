@@ -3,3 +3,11 @@
 name = "rusty_boy"
 version = "0.0.1"
 authors = ["Michael Pankov <constantius9@gmail.com>"]
+
+[dependencies.scan]
+
+git = "https://github.com/DanielKeep/rust-scan.git"
+
+[dependencies.scan_util]
+
+git = "https://github.com/DanielKeep/rust-scan-util.git"
