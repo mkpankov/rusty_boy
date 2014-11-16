@@ -196,8 +196,8 @@ fn main() {
              score, correct, incorrect, correct + incorrect, time_stat / 1000.,
              rate=rate);
 
-    let recs = read_records();
-    process_records(&recs);
+    let mut recs = read_records();
+    process_records(&mut recs, score);
     write_records(recs);
 }
 
@@ -238,8 +238,39 @@ fn read_records() -> Vec<Record> {
 }
 
 
-fn process_records(mut recs: & Vec<Record>) {
-    // TODO: Drop the lowest record
+fn process_records(recs: &mut Vec<Record>, new : uint) {
+    let n = recs.len();
+    if n >= 10 {
+        match &mut recs[1] {
+            &Record { points: old, .. } => {
+                if old < new {
+                    recs.pop();
+
+                    let mut stdin = std::io::stdio::stdin();
+                    print!("Enter your name: ");
+                    let line = stdin.read_line().unwrap();
+                    let name = line.as_slice().trim_chars(['\r', '\n'].as_slice());
+                    let name_ = name.to_string();
+
+                    recs.push( Record { points: new, player: name_ } );
+                    recs.sort_by(
+                        |&Record { points: p_a, .. }, &Record { points: p_b, .. }|
+                        p_a.cmp(&p_b));
+                }
+            }
+        }
+    } else {
+        let mut stdin = std::io::stdio::stdin();
+        print!("Enter your name: ");
+        let line = stdin.read_line().unwrap();
+        let name = line.as_slice().trim_chars(['\r', '\n'].as_slice());
+        let name_ = name.to_string();
+
+        recs.push( Record { points: new, player: name_ } );
+        recs.sort_by(
+            |&Record { points: p_a, .. }, &Record { points: p_b, .. }|
+            p_a.cmp(&p_b));
+    }
 }
 
 
