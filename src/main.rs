@@ -115,7 +115,7 @@ fn main() {
                     std::from_str::from_str(trimmed);
                 match maybe_c_user {
                     Some(c_user) => {
-                        let c_real = function(&a, &b);
+                        let c_real : int = function(&a, &b);
                         let message =
                             if c_user == c_real {
                                 correct += 1;
@@ -130,10 +130,10 @@ fn main() {
                                 } else {
                                     ""
                                 };
-                                let pending : uint =
-                                    1000u * mult;
-                                let combed = pending * combo;
-                                score += combed;
+                                let pending =
+                                    1000i * from_uint(mult).unwrap();
+                                let combed = pending * from_uint(combo).unwrap();
+                                score += from_int(combed).unwrap();
                                 color = term::color::GREEN;
                                 mark = "✓";
                                 format!(" {:+8}×{:02} = {:+10}! {}",
@@ -142,8 +142,8 @@ fn main() {
                                 incorrect += 1;
                                 combo = 0;
                                 attempts += 1;
-                                let pending = -1000;
-                                score += pending;
+                                let pending = -1000i;
+                                score += from_int(pending).unwrap();
                                 color = term::color::RED;
                                 mark = "✗";
                                 format!(" {:+8}^W {}.",
