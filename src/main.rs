@@ -111,8 +111,7 @@ fn main() {
                 times.push(diff_ms);
                 let color;
                 let mark;
-                let maybe_c_user : Option<int> =
-                    std::from_str::from_str(trimmed);
+                let maybe_c_user : Option<int> = from_str(trimmed);
                 match maybe_c_user {
                     Some(c_user) => {
                         let c_real : int = function(&a, &b);
