@@ -243,32 +243,47 @@ fn process_records(recs: &mut Vec<Record>, new : uint) {
         match &mut recs[1] {
             &Record { points: old, .. } => {
                 if old < new {
-                    recs.pop();
+                    let saved = recs.pop();
 
                     let mut stdin = std::io::stdio::stdin();
                     print!("Enter your name: ");
-                    let line = stdin.read_line().unwrap();
-                    let name = line.as_slice().trim_chars(['\r', '\n'].as_slice());
-                    let name_ = name.to_string();
+                    let line = stdin.read_line();
+                    match line {
+                        Ok(line) => {
+                            let name = line.as_slice().trim_chars(['\r', '\n'].as_slice());
+                            let name_ = name.to_string();
 
-                    recs.push( Record { points: new, player: name_ } );
-                    recs.sort_by(
-                        |&Record { points: p_a, .. }, &Record { points: p_b, .. }|
-                        p_a.cmp(&p_b));
+                            recs.push( Record { points: new, player: name_ } );
+                            recs.sort_by(
+                                |&Record { points: p_a, .. }, &Record { points: p_b, .. }|
+                                p_a.cmp(&p_b));    
+                        },
+                        Err(_) => {
+                            match saved {
+                                Some(saved) => recs.push(saved),
+                                None => (),
+                            }                            
+                        }
+                    }
                 }
             }
         }
     } else {
         let mut stdin = std::io::stdio::stdin();
         print!("Enter your name: ");
-        let line = stdin.read_line().unwrap();
-        let name = line.as_slice().trim_chars(['\r', '\n'].as_slice());
-        let name_ = name.to_string();
+        let line = stdin.read_line();
+        match line {
+            Ok(line) => {
+                let name = line.as_slice().trim_chars(['\r', '\n'].as_slice());
+                let name_ = name.to_string();
 
-        recs.push( Record { points: new, player: name_ } );
-        recs.sort_by(
-            |&Record { points: p_a, .. }, &Record { points: p_b, .. }|
-            p_a.cmp(&p_b));
+                recs.push( Record { points: new, player: name_ } );
+                recs.sort_by(
+                    |&Record { points: p_a, .. }, &Record { points: p_b, .. }|
+                    p_a.cmp(&p_b));    
+            },
+            Err(_) => (),
+        }
     }
 }
 
