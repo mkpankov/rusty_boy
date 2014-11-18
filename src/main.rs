@@ -237,6 +237,30 @@ fn read_records() -> Vec<Record> {
 }
 
 
+fn insert_record(recs: &mut Vec<Record>, saved: Option<Record>, new: uint) {
+    let mut stdin = std::io::stdio::stdin();
+    print!("Enter your name: ");
+    let line = stdin.read_line();
+    match line {
+        Ok(line) => {
+            let name = line.as_slice().trim_chars(['\r', '\n'].as_slice());
+            let name_ = name.to_string();
+
+            recs.push( Record { points: new, player: name_ } );
+            recs.sort_by(
+                |&Record { points: p_a, .. }, &Record { points: p_b, .. }|
+                p_a.cmp(&p_b));    
+        },
+        Err(_) => {
+            match saved {
+                Some(saved) => recs.push(saved),
+                None => (),
+            }                            
+        }
+    }
+}
+
+
 fn process_records(recs: &mut Vec<Record>, new : uint) {
     let n = recs.len();
     if n >= 10 {
@@ -245,45 +269,12 @@ fn process_records(recs: &mut Vec<Record>, new : uint) {
                 if old < new {
                     let saved = recs.pop();
 
-                    let mut stdin = std::io::stdio::stdin();
-                    print!("Enter your name: ");
-                    let line = stdin.read_line();
-                    match line {
-                        Ok(line) => {
-                            let name = line.as_slice().trim_chars(['\r', '\n'].as_slice());
-                            let name_ = name.to_string();
-
-                            recs.push( Record { points: new, player: name_ } );
-                            recs.sort_by(
-                                |&Record { points: p_a, .. }, &Record { points: p_b, .. }|
-                                p_a.cmp(&p_b));    
-                        },
-                        Err(_) => {
-                            match saved {
-                                Some(saved) => recs.push(saved),
-                                None => (),
-                            }                            
-                        }
-                    }
+                    insert_record(recs, saved, new);
                 }
             }
         }
     } else {
-        let mut stdin = std::io::stdio::stdin();
-        print!("Enter your name: ");
-        let line = stdin.read_line();
-        match line {
-            Ok(line) => {
-                let name = line.as_slice().trim_chars(['\r', '\n'].as_slice());
-                let name_ = name.to_string();
-
-                recs.push( Record { points: new, player: name_ } );
-                recs.sort_by(
-                    |&Record { points: p_a, .. }, &Record { points: p_b, .. }|
-                    p_a.cmp(&p_b));    
-            },
-            Err(_) => (),
-        }
+        insert_record(recs, None, new);
     }
 }
 
