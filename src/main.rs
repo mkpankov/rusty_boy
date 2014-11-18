@@ -58,6 +58,19 @@ fn main() {
     let mut incorrect = 0u;
     let mut times : Vec<u64> = vec![];
     let mut attempts = 0u;
+    let invitation;
+    let checkmark;
+    let wrongmark;
+
+    if std::os::args().iter().any(|x| x.as_slice() == "--unicode") {
+        invitation = "□";
+        checkmark = "✓";
+        wrongmark = "✗";
+    } else {
+        invitation = "o";
+        checkmark = "V";
+        wrongmark = "X";
+    }
 
     loop {
         #[deriving(PartialEq, Eq, PartialOrd, Ord)]
@@ -93,7 +106,7 @@ fn main() {
         let kind : Kind = rng_kind.gen();
         let (function, description) = functions[kind as uint];
 
-        print!("□   {} {} {} = ", a, description, b);
+        print!("{}   {} {} {} = ", invitation, a, description, b);
 
         let start = precise_time_ns();
         let result = io::stdio::stdin().read_line();
@@ -134,7 +147,7 @@ fn main() {
                                 let combed = pending * from_uint(combo).unwrap();
                                 score += from_int(combed).unwrap();
                                 color = term::color::GREEN;
-                                mark = "✓";
+                                mark = checkmark;
                                 format!(" {:+8}×{:02} = {:+10}! {}",
                                         pending, combo, combed, explanation)
                             } else {
@@ -144,7 +157,7 @@ fn main() {
                                 let pending = -1000i;
                                 score += from_int(pending).unwrap();
                                 color = term::color::RED;
-                                mark = "✗";
+                                mark = wrongmark;
                                 format!(" {:+8}^W {}.",
                                         pending, c_real)
                             };
