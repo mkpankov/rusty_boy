@@ -81,7 +81,7 @@ enum Kind {
 
 impl std::rand::Rand for Kind {
     fn rand<R: Rng>(rng: &mut R) -> Kind {
-        let range = Range::new(1i, 3);
+        let range = Range::new(1i, 4);
         let kind_num = range.ind_sample(rng);
         match kind_num {
             1 => Add_,
