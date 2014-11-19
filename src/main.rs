@@ -92,6 +92,92 @@ impl std::rand::Rand for Kind {
     }
 }
 
+fn handle_input(
+    string: &str,
+    times: &mut Vec<u64>,
+    start: u64,
+    end: u64,
+    correct: &mut uint,
+    incorrect: &mut uint,
+    a: int,
+    b: int,
+    function: fn(&int, &int) -> int,
+    combo: &mut uint,
+    attempts: &mut uint,
+    max_combo: &mut uint,
+    score: &mut uint,
+    sm: SymbolMap,
+) -> bool
+{
+    let diff_ms = (end - start) / pow(10, 6);
+    let diff_s  = (end - start) / pow(10, 9);
+    let diff_s_int = from_u64(diff_s).expect("Time of trial can't be converted to int");
+
+    let trimmed = string.as_slice().trim_chars(['\r', '\n'].as_slice());
+    if trimmed == "q" {
+        return true;
+    }
+    times.push(diff_ms);
+    let color;
+    let mark;
+    let maybe_c_user : Option<int> = from_str(trimmed);
+    match maybe_c_user {
+        Some(c_user) => {
+            let c_real : int = function(&a, &b);
+            let message =
+                if c_user == c_real {
+                    *correct += 1;
+                    *combo += 1;
+                    *attempts += 1;
+                    if combo > max_combo {
+                        *max_combo = *combo;
+                    }
+                    let mult = full_multiplier(diff_s_int);
+                    let explanation = if mult == 0 {
+                        "(timeout)"
+                    } else {
+                        ""
+                    };
+                    let pending =
+                        1000i * from_uint(mult).unwrap();
+                    let combed = pending * from_uint(*combo).unwrap();
+                    *score += from_int(combed).unwrap();
+                    color = term::color::GREEN;
+                    mark = sm.checkmark;
+                    format!(" {:+8}×{:02} = {:+10}! {}",
+                            pending, combo, combed, explanation)
+                } else {
+                    *incorrect += 1;
+                    *combo = 0;
+                    *attempts += 1;
+                    let pending = -1000i;
+                    *score += from_int(pending).unwrap();
+                    color = term::color::RED;
+                    mark = sm.wrongmark;
+                    format!(" {:+8}^W {}.",
+                            pending, c_real)
+                };
+            let maybe_term = term::stdout();
+
+            if maybe_term.is_some() {
+                let mut term = term::stdout().unwrap();
+                term.fg(color).unwrap();
+                (write!(term, "{:1}", mark)).unwrap();
+                term.reset().unwrap();
+            } else {
+                print!("{:1}", mark);
+            }
+
+            println!("{:47}{:32}", message, score);
+            info!(" {} ms", diff_ms);
+        },
+        None => {
+            println!("You didn't input a number. Try again.");
+        },
+    }
+    return false;
+}
+
 fn main() {
     let mut score = 0u;
     let mut combo = 0u;
@@ -120,73 +206,14 @@ fn main() {
         let start = precise_time_ns();
         let result = io::stdio::stdin().read_line();
         let end   = precise_time_ns();
-        let diff_ms = (end - start) / pow(10, 6);
-        let diff_s  = (end - start) / pow(10, 9);
-        let diff_s_int = from_u64(diff_s).expect("Time of trial can't be converted to int");
 
         match result {
             Ok(string) => {
-                let trimmed = string.as_slice().trim_chars(['\r', '\n'].as_slice());
-                if trimmed == "q" {
+                if handle_input(string.as_slice(), &mut times, start, end,
+                                &mut correct, &mut incorrect,
+                                a, b, function, &mut combo, &mut attempts,
+                                &mut max_combo, &mut score, sm) {
                     break;
-                }
-                times.push(diff_ms);
-                let color;
-                let mark;
-                let maybe_c_user : Option<int> = from_str(trimmed);
-                match maybe_c_user {
-                    Some(c_user) => {
-                        let c_real : int = function(&a, &b);
-                        let message =
-                            if c_user == c_real {
-                                correct += 1;
-                                combo += 1;
-                                attempts += 1;
-                                if combo > max_combo {
-                                    max_combo = combo;
-                                }
-                                let mult = full_multiplier(diff_s_int);
-                                let explanation = if mult == 0 {
-                                    "(timeout)"
-                                } else {
-                                    ""
-                                };
-                                let pending =
-                                    1000i * from_uint(mult).unwrap();
-                                let combed = pending * from_uint(combo).unwrap();
-                                score += from_int(combed).unwrap();
-                                color = term::color::GREEN;
-                                mark = sm.checkmark;
-                                format!(" {:+8}×{:02} = {:+10}! {}",
-                                        pending, combo, combed, explanation)
-                            } else {
-                                incorrect += 1;
-                                combo = 0;
-                                attempts += 1;
-                                let pending = -1000i;
-                                score += from_int(pending).unwrap();
-                                color = term::color::RED;
-                                mark = sm.wrongmark;
-                                format!(" {:+8}^W {}.",
-                                        pending, c_real)
-                            };
-                        let maybe_term = term::stdout();
-
-                        if maybe_term.is_some() {
-                            let mut term = term::stdout().unwrap();
-                            term.fg(color).unwrap();
-                            (write!(term, "{:1}", mark)).unwrap();
-                            term.reset().unwrap();
-                        } else {
-                            print!("{:1}", mark);
-                        }
-
-                        println!("{:47}{:32}", message, score);
-                        info!(" {} ms", diff_ms);
-                    },
-                    None => {
-                        println!("You didn't input a number. Try again.");
-                    },
                 }
             },
             Err(_) => break,
