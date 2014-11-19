@@ -50,6 +50,28 @@ fn compute_median(mut times: Vec<u64>) -> f64 {
     }
 }
 
+struct SymbolMap<'a> {
+    invitation: &'a str,
+    checkmark: &'a str,
+    wrongmark: &'a str,
+}
+
+fn setup_symbols<'a>() -> SymbolMap<'a> {
+    if std::os::args().iter().any(|x| x.as_slice() == "--unicode") {
+        SymbolMap {
+            invitation: "□",
+            checkmark: "✓",
+            wrongmark: "✗",
+        }
+    } else {
+        SymbolMap {
+            invitation: "o",
+            checkmark: "V",
+            wrongmark: "X",
+        }
+    }
+}
+
 fn main() {
     let mut score = 0u;
     let mut combo = 0u;
@@ -58,20 +80,8 @@ fn main() {
     let mut incorrect = 0u;
     let mut times : Vec<u64> = vec![];
     let mut attempts = 0u;
-    let invitation;
-    let checkmark;
-    let wrongmark;
 
-    if std::os::args().iter().any(|x| x.as_slice() == "--unicode") {
-        invitation = "□";
-        checkmark = "✓";
-        wrongmark = "✗";
-    } else {
-        invitation = "o";
-        checkmark = "V";
-        wrongmark = "X";
-    }
-
+    let sm = setup_symbols();
     loop {
         #[deriving(PartialEq, Eq, PartialOrd, Ord)]
         enum Kind {
@@ -106,7 +116,7 @@ fn main() {
         let kind : Kind = rng_kind.gen();
         let (function, description) = functions[kind as uint];
 
-        print!("{}   {} {} {} = ", invitation, a, description, b);
+        print!("{}   {} {} {} = ", sm.invitation, a, description, b);
 
         let start = precise_time_ns();
         let result = io::stdio::stdin().read_line();
@@ -147,7 +157,7 @@ fn main() {
                                 let combed = pending * from_uint(combo).unwrap();
                                 score += from_int(combed).unwrap();
                                 color = term::color::GREEN;
-                                mark = checkmark;
+                                mark = sm.checkmark;
                                 format!(" {:+8}×{:02} = {:+10}! {}",
                                         pending, combo, combed, explanation)
                             } else {
@@ -157,7 +167,7 @@ fn main() {
                                 let pending = -1000i;
                                 score += from_int(pending).unwrap();
                                 color = term::color::RED;
-                                mark = wrongmark;
+                                mark = sm.wrongmark;
                                 format!(" {:+8}^W {}.",
                                         pending, c_real)
                             };
@@ -262,13 +272,13 @@ fn insert_record(recs: &mut Vec<Record>, saved: Option<Record>, new: uint) {
             recs.push( Record { points: new, player: name_ } );
             recs.sort_by(
                 |&Record { points: p_a, .. }, &Record { points: p_b, .. }|
-                p_a.cmp(&p_b));    
+                p_a.cmp(&p_b));
         },
         Err(_) => {
             match saved {
                 Some(saved) => recs.push(saved),
                 None => (),
-            }                            
+            }
         }
     }
 }
