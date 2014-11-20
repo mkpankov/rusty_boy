@@ -222,7 +222,13 @@ fn main() {
             break;
         }
     }
+    process_results(times, incorrect, correct, score);
+}
 
+fn process_results(times: Vec<u64>,
+                   incorrect: uint,
+                   correct: uint,
+                   score: uint) {
     let time_stat : f64 = if times.len() != 0 {
         compute_median(times)
     } else {
