@@ -105,7 +105,7 @@ fn handle_input(
     combo: &mut uint,
     attempts: &mut uint,
     max_combo: &mut uint,
-    score: &mut uint,
+    score: &mut int,
     sm: SymbolMap,
 ) -> bool
 {
@@ -151,7 +151,7 @@ fn handle_input(
                     *combo = 0;
                     *attempts += 1;
                     let pending = -1000i;
-                    *score += from_int(pending).unwrap();
+                    *score += pending;
                     color = term::color::RED;
                     mark = sm.wrongmark;
                     format!(" {:+8}^W {}.",
@@ -179,7 +179,7 @@ fn handle_input(
 }
 
 fn main() {
-    let mut score = 0u;
+    let mut score = 0i;
     let mut combo = 0u;
     let mut max_combo = 0u;
     let mut correct = 0u;
@@ -228,7 +228,7 @@ fn main() {
 fn process_results(times: Vec<u64>,
                    incorrect: uint,
                    correct: uint,
-                   score: uint) {
+                   score: int) {
     let time_stat : f64 = if times.len() != 0 {
         compute_median(times)
     } else {
@@ -257,7 +257,7 @@ fn process_results(times: Vec<u64>,
 
 #[deriving(Show)]
 struct Record {
-    points: uint,
+    points: int,
     player: String,
 }
 
@@ -274,7 +274,7 @@ fn read_records() -> Vec<Record> {
         let record : Record;
         let res = scanln_from! {
             &mut file,
-            "player: \"" player: &str "\", points: \"" points: uint "\"" => {
+            "player: \"" player: &str "\", points: \"" points: int "\"" => {
                 record = Record { player : player.to_string(),
                                   points : points };
                 records.push(record)
@@ -292,7 +292,7 @@ fn read_records() -> Vec<Record> {
 }
 
 
-fn insert_record(recs: &mut Vec<Record>, saved: Option<Record>, new: uint) {
+fn insert_record(recs: &mut Vec<Record>, saved: Option<Record>, new: int) {
     let mut stdin = std::io::stdio::stdin();
     print!("Enter your name: ");
     let line = stdin.read_line();
@@ -316,7 +316,7 @@ fn insert_record(recs: &mut Vec<Record>, saved: Option<Record>, new: uint) {
 }
 
 
-fn process_records(recs: &mut Vec<Record>, new : uint) {
+fn process_records(recs: &mut Vec<Record>, new : int) {
     let n = recs.len();
     if n >= 10 {
         match &mut recs[1] {
@@ -341,7 +341,7 @@ fn write_records(recs: Vec<Record>) {
     for r in recs.iter() {
         match r {
             &Record { ref player, points } => {
-                let line = format!("player: \"{:s}\", points: \"{:u}\"\n",
+                let line = format!("player: \"{:s}\", points: \"{}\"\n",
                                    *player, points);
                 file.write(line.as_bytes()).unwrap();
             }
