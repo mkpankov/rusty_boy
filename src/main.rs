@@ -92,70 +92,102 @@ impl std::rand::Rand for Kind {
     }
 }
 
-fn handle_input(
-    string: &str,
-    times: &mut Vec<u64>,
-    start: u64,
-    end: u64,
-    correct: &mut uint,
-    incorrect: &mut uint,
-    a: int,
-    b: int,
-    function: fn(&int, &int) -> int,
-    combo: &mut uint,
-    attempts: &mut uint,
-    max_combo: &mut uint,
-    score: &mut int,
+fn handle_input<'a>(
+    s: State,
     sm: SymbolMap,
-) -> bool
+) -> State<'a>
 {
-    let diff_ms = (end - start) / pow(10, 6);
-    let diff_s  = (end - start) / pow(10, 9);
+    let diff_ms = (s.end - s.start) / pow(10, 6);
+    let diff_s  = (s.end - s.start) / pow(10, 9);
     let diff_s_int = from_u64(diff_s).expect("Time of trial can't be converted to int");
 
-    let trimmed = string.as_slice().trim_chars(['\r', '\n'].as_slice());
-    if trimmed == "q" || trimmed == "quit" {
-        return true;
-    }
-    times.push(diff_ms);
-    let color;
-    let mark;
+    let trimmed = s.input.as_slice().trim_chars(['\r', '\n'].as_slice());
+    let new_is_finished;
+    let mut new_times = s.times.clone();
+    new_times.push(diff_ms);
     let maybe_c_user : Option<int> = from_str(trimmed);
+    let new_correct;
+    let new_incorrect;
+    let new_combo;
+    let new_attempts;
+    let new_max_combo;
+    let new_score;
+
+    new_attempts = s.attempts + 1;
+    if trimmed == "q" || trimmed == "quit" || new_attempts >= 10 {
+        new_is_finished = true;
+    } else {
+        new_is_finished = false;
+    }
+
     match maybe_c_user {
         Some(c_user) => {
-            let c_real : int = function(&a, &b);
-            let message =
-                if c_user == c_real {
-                    *correct += 1;
-                    *combo += 1;
-                    *attempts += 1;
-                    if combo > max_combo {
-                        *max_combo = *combo;
-                    }
-                    let mult = full_multiplier(diff_s_int);
-                    let explanation = if mult == 0 {
-                        "(timeout)"
-                    } else {
-                        ""
-                    };
-                    let pending =
-                        1000i * from_uint(mult).unwrap();
-                    let combed = pending * from_uint(*combo).unwrap();
-                    *score += from_int(combed).unwrap();
-                    color = term::color::GREEN;
-                    mark = sm.checkmark;
-                    format!(" {:+8}×{:02} = {:+10}! {}",
-                            pending, combo, combed, explanation)
+            let c_real : int = (s.function)(&s.a, &s.b);
+            let is_correct = c_user == c_real;
+            new_correct =
+                if is_correct {
+                    s.correct + 1
                 } else {
-                    *incorrect += 1;
-                    *combo = 0;
-                    *attempts += 1;
-                    let pending = -1000i;
-                    *score += pending;
-                    color = term::color::RED;
-                    mark = sm.wrongmark;
+                    s.correct
+                };
+            new_incorrect =
+                if is_correct {
+                    s.incorrect
+                } else {
+                    s.incorrect + 1
+                };
+            new_combo =
+                if is_correct {
+                    s.combo + 1
+                } else {
+                    0
+                };
+            new_max_combo =
+                if new_combo > s.max_combo {
+                    new_combo
+                } else {
+                    s.max_combo
+                };
+            let mult = full_multiplier(diff_s_int);
+            let explanation =
+                if mult == 0 {
+                    "(timeout)"
+                } else {
+                    ""
+                };
+            let pending =
+                if is_correct {
+                    1000i * from_uint(mult).unwrap()
+                } else {
+                    -1000i
+                };
+            let combed =
+                if is_correct {
+                    pending * from_uint(s.combo).unwrap()
+                } else {
+                    pending
+                };
+            let message =
+                if is_correct {
+                    format!(" {:+8}×{:02} = {:+10}! {}",
+                            pending, s.combo, combed, explanation)
+                } else {
                     format!(" {:+8}^W {}.",
                             pending, c_real)
+                };
+            new_score =
+                s.score + from_int(combed).unwrap();
+            let color =
+                if is_correct {
+                    term::color::GREEN
+                } else {
+                    term::color::RED
+                };
+            let mark =
+                if is_correct {
+                    sm.checkmark
+                } else {
+                    sm.wrongmark
                 };
             let maybe_term = term::stdout();
 
@@ -168,14 +200,70 @@ fn handle_input(
                 print!("{:1}", mark);
             }
 
-            println!("{:47}{:32}", message, score);
+            println!("{:47}{:32}", message, new_score);
             info!(" {} ms", diff_ms);
+
+            State {
+                input: "",
+                a: 0,
+                b: 0,
+                function: Add::add,
+                times: new_times,
+                start: 0,
+                end: 0,
+                correct: new_correct,
+                incorrect: new_incorrect,
+                attempts: new_attempts,
+                combo: new_combo,
+                max_combo: new_max_combo,
+                score: new_score,
+                is_finished: new_is_finished,
+            }
         },
         None => {
             println!("You didn't input a number. Try again.");
+            State {
+                input: "",
+                a: 0,
+                b: 0,
+                function: Add::add,
+                times: new_times,
+                start: 0,
+                end: 0,
+                correct: s.correct,
+                incorrect: s.incorrect + 1,
+                attempts: s.attempts + 1,
+                combo: 0,
+                max_combo: s.max_combo,
+                score: s.score - 1000,
+                is_finished: new_is_finished,
+            }
         },
     }
-    return false;
+
+}
+
+struct State<'a> {
+    input: &'a str,
+
+    a: int,
+    b: int,
+    function: fn(&int, &int) -> int,
+
+    times: Vec<u64>,
+    start: u64,
+    end: u64,
+
+    correct: uint,
+    incorrect: uint,
+    attempts: uint,
+
+    combo: uint,
+    max_combo: uint,
+
+    score: int,
+
+    is_finished: bool,
 }
 
 fn main() {
@@ -209,18 +297,31 @@ fn main() {
 
         match result {
             Ok(string) => {
-                if handle_input(string.as_slice(), &mut times, start, end,
-                                &mut correct, &mut incorrect,
-                                a, b, function, &mut combo, &mut attempts,
-                                &mut max_combo, &mut score, sm) {
+                let new_state = handle_input(
+                    State {
+                        input: string.as_slice(),
+                        times: times,
+                        start: start,
+                        end: end,
+                        correct: correct,
+                        incorrect: incorrect,
+                        a: a,
+                        b: b,
+                        function: function,
+                        combo: combo,
+                        attempts: attempts,
+                        max_combo: max_combo,
+                        score: score,
+                        is_finished: false,
+                    },
+                    sm);
+                times = new_state.times;
+                if new_state.is_finished {
                     break;
                 }
             },
             Err(_) => break,
         };
-        if attempts >= 10 {
-            break;
-        }
     }
     process_results(times, incorrect, correct, score);
 }
