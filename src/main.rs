@@ -114,7 +114,7 @@ fn handle_input(
     let diff_s_int = from_u64(diff_s).expect("Time of trial can't be converted to int");
 
     let trimmed = string.as_slice().trim_chars(['\r', '\n'].as_slice());
-    if trimmed == "q" {
+    if trimmed == "q" || trimmed == "quit" {
         return true;
     }
     times.push(diff_ms);
