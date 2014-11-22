@@ -93,15 +93,16 @@ impl std::rand::Rand for Kind {
 }
 
 fn handle_input<'a>(
+    r: Round,
     s: State,
     sm: SymbolMap,
 ) -> State<'a>
 {
-    let diff_ms = (s.end - s.start) / pow(10, 6);
-    let diff_s  = (s.end - s.start) / pow(10, 9);
+    let diff_ms = (r.end - r.start) / pow(10, 6);
+    let diff_s  = (r.end - r.start) / pow(10, 9);
     let diff_s_int = from_u64(diff_s).expect("Time of trial can't be converted to int");
 
-    let trimmed = s.input.as_slice().trim_chars(['\r', '\n'].as_slice());
+    let trimmed = r.input.as_slice().trim_chars(['\r', '\n'].as_slice());
     let new_is_finished;
     let mut new_times = s.times.clone();
     new_times.push(diff_ms);
@@ -122,7 +123,7 @@ fn handle_input<'a>(
 
     match maybe_c_user {
         Some(c_user) => {
-            let c_real : int = (s.function)(&s.a, &s.b);
+            let c_real : int = (r.function)(&r.a, &r.b);
             let is_correct = c_user == c_real;
             new_correct =
                 if is_correct {
@@ -204,13 +205,7 @@ fn handle_input<'a>(
             info!(" {} ms", diff_ms);
 
             State {
-                input: "",
-                a: 0,
-                b: 0,
-                function: Add::add,
                 times: new_times,
-                start: 0,
-                end: 0,
                 correct: new_correct,
                 incorrect: new_incorrect,
                 attempts: new_attempts,
@@ -223,13 +218,7 @@ fn handle_input<'a>(
         None => {
             println!("You didn't input a number. Try again.");
             State {
-                input: "",
-                a: 0,
-                b: 0,
-                function: Add::add,
                 times: new_times,
-                start: 0,
-                end: 0,
                 correct: s.correct,
                 incorrect: s.incorrect + 1,
                 attempts: s.attempts + 1,
@@ -243,16 +232,19 @@ fn handle_input<'a>(
 
 }
 
-struct State<'a> {
+struct Round<'a> {
     input: &'a str,
 
     a: int,
     b: int,
     function: fn(&int, &int) -> int,
 
-    times: Vec<u64>,
     start: u64,
     end: u64,
+}
+
+struct State<'a> {
+    times: Vec<u64>,
 
     correct: uint,
     incorrect: uint,
@@ -298,16 +290,18 @@ fn main() {
         match result {
             Ok(string) => {
                 let new_state = handle_input(
-                    State {
+                    Round {
                         input: string.as_slice(),
-                        times: times,
                         start: start,
                         end: end,
-                        correct: correct,
-                        incorrect: incorrect,
                         a: a,
                         b: b,
                         function: function,
+                    },
+                    State {
+                        times: times,
+                        correct: correct,
+                        incorrect: incorrect,
                         combo: combo,
                         attempts: attempts,
                         max_combo: max_combo,
