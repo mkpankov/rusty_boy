@@ -141,7 +141,7 @@ fn handle_input<'a>(
                 if is_correct {
                     s.combo + 1
                 } else {
-                    0
+                    1
                 };
             new_max_combo =
                 if new_combo > s.max_combo {
@@ -222,7 +222,7 @@ fn handle_input<'a>(
                 correct: s.correct,
                 incorrect: s.incorrect + 1,
                 attempts: s.attempts + 1,
-                combo: 0,
+                combo: 1,
                 max_combo: s.max_combo,
                 score: s.score - 1000,
                 is_finished: new_is_finished,
