@@ -259,14 +259,6 @@ struct State<'a> {
 }
 
 fn main() {
-    let mut score = 0i;
-    let mut combo = 0u;
-    let mut max_combo = 0u;
-    let mut correct = 0u;
-    let mut incorrect = 0u;
-    let mut times : Vec<u64> = vec![];
-    let mut attempts = 0u;
-
     let sm = setup_symbols();
     let range_operands = Range::new(1, 30);
     let mut rng_a =    rand::task_rng();
@@ -274,6 +266,19 @@ fn main() {
     let mut rng_kind = rand::task_rng();
     let functions : &[(fn(&int, &int) -> int, &str)] =
         &[(Add::add, "+"), (Sub::sub, "-"), (Mul::mul, "*")];
+
+    let initial_state =
+        State {
+            times: vec![],
+            correct: 0,
+            incorrect: 0,
+            combo: 1,
+            max_combo: 0,
+            attempts: 0,
+            score: 0,
+            is_finished: false,
+        };
+    let mut last_state = initial_state;
 
     loop {
         let a = range_operands.ind_sample(&mut rng_a);
@@ -289,7 +294,7 @@ fn main() {
 
         match result {
             Ok(string) => {
-                let new_state = handle_input(
+                last_state = handle_input(
                     Round {
                         input: string.as_slice(),
                         start: start,
@@ -298,41 +303,28 @@ fn main() {
                         b: b,
                         function: function,
                     },
-                    State {
-                        times: times,
-                        correct: correct,
-                        incorrect: incorrect,
-                        combo: combo,
-                        attempts: attempts,
-                        max_combo: max_combo,
-                        score: score,
-                        is_finished: false,
-                    },
+                    last_state,
                     sm);
-                times = new_state.times;
-                if new_state.is_finished {
+                if last_state.is_finished {
                     break;
                 }
             },
             Err(_) => break,
         };
     }
-    process_results(times, incorrect, correct, score);
+    process_results(last_state);
 }
 
-fn process_results(times: Vec<u64>,
-                   incorrect: uint,
-                   correct: uint,
-                   score: int) {
-    let time_stat : f64 = if times.len() != 0 {
-        compute_median(times)
+fn process_results<'a>(s: State<'a>) {
+    let time_stat : f64 = if s.times.len() != 0 {
+        compute_median(s.times)
     } else {
         0.
     };
-    let total_trials = incorrect + correct;
+    let total_trials = s.incorrect + s.correct;
     let rate : f64 = if total_trials != 0 {
         100.
-      * from_uint(correct)     .expect("Number of correct trials can't be converted to f64")
+      * from_uint(s.correct)     .expect("Number of correct trials can't be converted to f64")
       / from_uint(total_trials).expect("Total number of trials can't be converted to f64")
     } else {
         0.
@@ -342,11 +334,11 @@ fn process_results(times: Vec<u64>,
              Your score: {}\n\
              Correct answers: {} ({rate:.0f} %), incorrect: {}, total: {}.\n\
              Median time: {:.2f} s.",
-             score, correct, incorrect, correct + incorrect, time_stat / 1000.,
-             rate=rate);
+             s.score, s.correct, s.incorrect, s.correct + s.incorrect,
+             time_stat / 1000., rate=rate);
 
     let mut recs = read_records();
-    process_records(&mut recs, score);
+    process_records(&mut recs, s.score);
     write_records(recs);
 }
 
