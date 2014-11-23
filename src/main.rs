@@ -216,7 +216,7 @@ fn handle_input<'a>(
             }
         },
         None => {
-            println!("You didn't input a number. Try again.");
+            println!("You didn't input a number.");
             State {
                 times: new_times,
                 correct: s.correct,
