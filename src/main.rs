@@ -123,12 +123,6 @@ fn handle_input<'a>(
             let is_correct = c_user == c_real;
             new_combo = s.combo + 1;
             let mult = full_multiplier(diff_s_int);
-            let explanation =
-                if mult == 0 {
-                    "(timeout)"
-                } else {
-                    ""
-                };
             let pending = 1000i * from_uint(mult).unwrap();
 
             let combed = if is_correct {
@@ -137,38 +131,9 @@ fn handle_input<'a>(
                 -1000
             };
             let new_score = s.score + from_int(combed).unwrap();
-            let message =
-                if is_correct {
-                    format!(" {:+8}×{:02} = {:+10}! {}",
-                            pending, s.combo, combed, explanation)
-                } else {
-                    format!(" {:+8}^W {}.",
-                            combed, c_real)
-                };
-            let color =
-                if is_correct {
-                    term::color::GREEN
-                } else {
-                    term::color::RED
-                };
-            let mark =
-                if is_correct {
-                    sm.checkmark
-                } else {
-                    sm.wrongmark
-                };
-            let maybe_term = term::stdout();
 
-            if maybe_term.is_some() {
-                let mut term = term::stdout().unwrap();
-                term.fg(color).unwrap();
-                (write!(term, "{:1}", mark)).unwrap();
-                term.reset().unwrap();
-            } else {
-                print!("{:1}", mark);
-            }
-
-            println!("{:47}{:32}", message, new_score);
+            do_output(&s, &sm,
+                      is_correct, pending, combed, new_score, c_real, mult);
             info!(" {} ms", diff_ms);
 
             if ! is_correct {
@@ -190,10 +155,55 @@ fn handle_input<'a>(
             produce_incorrect(s)
         },
     }
-
 }
 
-fn produce_incorrect<'a, 'b>(s: State<'a>) -> State<'b>{
+fn do_output(s: &State, sm: &SymbolMap,
+             is_correct: bool,
+             pending: int, combed: int, new_score: int,
+             c_real: int, mult: uint) {
+
+    let explanation =
+        if mult == 0 {
+            "(timeout)"
+        } else {
+            ""
+        };
+
+    let message =
+        if is_correct {
+            format!(" {:+8}×{:02} = {:+10}! {}",
+                    pending, s.combo, combed, explanation)
+        } else {
+            format!(" {:+8}^W {}.",
+                    combed, c_real)
+        };
+    let color =
+        if is_correct {
+            term::color::GREEN
+        } else {
+            term::color::RED
+        };
+    let mark =
+        if is_correct {
+            sm.checkmark
+        } else {
+            sm.wrongmark
+        };
+    let maybe_term = term::stdout();
+
+    if maybe_term.is_some() {
+        let mut term = term::stdout().unwrap();
+        term.fg(color).unwrap();
+        (write!(term, "{:1}", mark)).unwrap();
+        term.reset().unwrap();
+    } else {
+        print!("{:1}", mark);
+    }
+
+    println!("{:47}{:32}", message, new_score);
+}
+
+fn produce_incorrect<'a, 'b>(s: State<'a>) -> State<'b> {
     let new_attempts = s.attempts + 1;
     let new_is_finished = new_attempts >= 10;
     State {
