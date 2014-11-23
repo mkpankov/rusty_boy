@@ -107,12 +107,8 @@ fn handle_input<'a>(
     let mut new_times = s.times.clone();
     new_times.push(diff_ms);
     let maybe_c_user : Option<int> = from_str(trimmed);
-    let new_correct;
-    let new_incorrect;
-    let new_combo;
     let new_attempts;
-    let new_max_combo;
-    let new_score;
+    let new_combo;
 
     new_attempts = s.attempts + 1;
     if trimmed == "q" || trimmed == "quit" || new_attempts >= 10 {
@@ -125,30 +121,7 @@ fn handle_input<'a>(
         Some(c_user) => {
             let c_real : int = (r.function)(&r.a, &r.b);
             let is_correct = c_user == c_real;
-            new_correct =
-                if is_correct {
-                    s.correct + 1
-                } else {
-                    s.correct
-                };
-            new_incorrect =
-                if is_correct {
-                    s.incorrect
-                } else {
-                    s.incorrect + 1
-                };
-            new_combo =
-                if is_correct {
-                    s.combo + 1
-                } else {
-                    1
-                };
-            new_max_combo =
-                if new_combo > s.max_combo {
-                    new_combo
-                } else {
-                    s.max_combo
-                };
+            new_combo = s.combo + 1;
             let mult = full_multiplier(diff_s_int);
             let explanation =
                 if mult == 0 {
@@ -156,28 +129,22 @@ fn handle_input<'a>(
                 } else {
                     ""
                 };
-            let pending =
-                if is_correct {
-                    1000i * from_uint(mult).unwrap()
-                } else {
-                    -1000i
-                };
-            let combed =
-                if is_correct {
-                    pending * from_uint(s.combo).unwrap()
-                } else {
-                    pending
-                };
+            let pending = 1000i * from_uint(mult).unwrap();
+
+            let combed = if is_correct {
+                pending * from_uint(s.combo).unwrap()
+            } else {
+                -1000
+            };
+            let new_score = s.score + from_int(combed).unwrap();
             let message =
                 if is_correct {
                     format!(" {:+8}×{:02} = {:+10}! {}",
                             pending, s.combo, combed, explanation)
                 } else {
                     format!(" {:+8}^W {}.",
-                            pending, c_real)
+                            combed, c_real)
                 };
-            new_score =
-                s.score + from_int(combed).unwrap();
             let color =
                 if is_correct {
                     term::color::GREEN
@@ -204,32 +171,41 @@ fn handle_input<'a>(
             println!("{:47}{:32}", message, new_score);
             info!(" {} ms", diff_ms);
 
+            if ! is_correct {
+                return produce_incorrect(s);
+            }
             State {
                 times: new_times,
-                correct: new_correct,
-                incorrect: new_incorrect,
+                correct: s.correct + 1,
+                incorrect: s.incorrect,
                 attempts: new_attempts,
                 combo: new_combo,
-                max_combo: new_max_combo,
+                max_combo: new_combo,
                 score: new_score,
                 is_finished: new_is_finished,
             }
         },
         None => {
             println!("You didn't input a number.");
-            State {
-                times: new_times,
-                correct: s.correct,
-                incorrect: s.incorrect + 1,
-                attempts: s.attempts + 1,
-                combo: 1,
-                max_combo: s.max_combo,
-                score: s.score - 1000,
-                is_finished: new_is_finished,
-            }
+            produce_incorrect(s)
         },
     }
 
+}
+
+fn produce_incorrect<'a, 'b>(s: State<'a>) -> State<'b>{
+    let new_attempts = s.attempts + 1;
+    let new_is_finished = new_attempts >= 10;
+    State {
+        times: s.times,
+        correct: s.correct,
+        incorrect: s.incorrect + 1,
+        attempts: new_attempts,
+        combo: 1,
+        max_combo: s.max_combo,
+        score: s.score - 1000,
+        is_finished: new_is_finished,
+    }
 }
 
 struct Round<'a> {
