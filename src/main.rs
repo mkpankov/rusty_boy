@@ -1,15 +1,19 @@
 #![feature(phase)]
 #[phase(plugin, link)] extern crate log;
 #[phase(plugin)] extern crate scan;
+
+extern crate serialize;
+
 extern crate scan_util;
 
 extern crate term;
 extern crate time;
 
+use serialize::{json, Decodable};
 use std::io;
 use std::num::{pow, from_int, from_uint, from_u64, from_f64};
 use std::rand;
-use std::rand::Rng;
+use std::rand::{Rng, TaskRng};
 use std::rand::distributions::{IndependentSample, Range};
 use time::precise_time_ns;
 
@@ -81,7 +85,8 @@ enum Kind {
 
 impl std::rand::Rand for Kind {
     fn rand<R: Rng>(rng: &mut R) -> Kind {
-        let range = Range::new(1i, 4);
+        // FIXME: This should be inferred from number of available functions
+        let range = Range::new(1i, 2);
         let kind_num = range.ind_sample(rng);
         match kind_num {
             1 => Add_,
@@ -119,7 +124,7 @@ fn handle_input<'a>(
 
     match maybe_c_user {
         Some(c_user) => {
-            let c_real : int = (r.function)(&r.a, &r.b);
+            let c_real : int = (*r.function)(&r.a, &r.b);
             let is_correct = c_user == c_real;
             new_combo = s.combo + 1;
             let mult = full_multiplier(diff_s_int);
@@ -204,6 +209,13 @@ fn do_output(s: &State, sm: &SymbolMap,
     println!("{:47}{:32}", message, new_score);
 }
 
+#[deriving(Decodable, Encodable, Show)]
+struct Level {
+    functions: Vec<String>,
+    operands_digits: Vec<int>,
+    timeout: int,
+}
+
 fn produce_incorrect<'a, 'b>(s: State<'a>) -> State<'b> {
     let new_attempts = s.attempts + 1;
     let new_is_finished = new_attempts >= 10;
@@ -224,7 +236,7 @@ struct Round<'a> {
 
     a: int,
     b: int,
-    function: fn(&int, &int) -> int,
+    function: &'a fn(&int, &int) -> int,
 
     start: u64,
     end: u64,
@@ -245,14 +257,74 @@ struct State<'a> {
     is_finished: bool,
 }
 
+fn read_level() -> Result<Level, String> {
+    let path_level_beginner = Path::new("beginner.lvl.json");
+    let mut file = match std::io::File::open(&path_level_beginner) {
+        Err(why) =>
+            return Err(format!("couldn't open {}: {}", path_level_beginner.display(), why)),
+        Ok(file) => file,
+    };
+
+    let level_encoded;
+    match file.read_to_string() {
+        Err(why) =>
+            return Err(format!("couldn't read {}: {}", path_level_beginner.display(), why)),
+        Ok(string) => level_encoded = string,
+    };
+
+    let level_decoded: json::DecodeResult<Level> =
+        json::decode(level_encoded.as_slice());
+    match level_decoded {
+        Err(why) => Err(format!("{}", why)),
+        Ok(level) => Ok(level),
+    }
+}
+
+struct Game {
+     ranges_operands: Vec<Range<int>>,
+     rng_a: TaskRng,
+     rng_b: TaskRng,
+     rng_kind: TaskRng,
+     functions: Vec<(fn(&int, &int) -> int, String)>,
+}
+
+fn setup_game<'a>(l: Level) -> Game {
+    let mut ranges_operands = vec![];
+    for i in l.operands_digits.iter() {
+        ranges_operands.push(Range::new(1, 10 ** i));
+    }
+    let rng_a =    rand::task_rng();
+    let rng_b =    rand::task_rng();
+    let rng_kind = rand::task_rng();
+
+    let mut functions = vec![];
+    for f in l.functions.iter() {
+        match f.as_slice() {
+            o @ "+" => functions.push((Add::add, o.to_string())),
+            o @ "-" => functions.push((Sub::sub, o.to_string())),
+            o @ "*" => functions.push((Mul::mul, o.to_string())),
+            o @ "/" => functions.push((Div::div, o.to_string())),
+            _   => continue,
+        }
+    }
+    Game {
+        ranges_operands: ranges_operands,
+        rng_a: rng_a,
+        rng_b: rng_b,
+        rng_kind: rng_kind,
+        functions: functions,
+    }
+}
+
 fn main() {
     let sm = setup_symbols();
-    let range_operands = Range::new(1, 30);
-    let mut rng_a =    rand::task_rng();
-    let mut rng_b =    rand::task_rng();
-    let mut rng_kind = rand::task_rng();
-    let functions : &[(fn(&int, &int) -> int, &str)] =
-        &[(Add::add, "+"), (Sub::sub, "-"), (Mul::mul, "*")];
+
+    let level = read_level();
+    let mut game;
+    match level {
+        Err(why) => panic!("{}", why),
+        Ok(level) => game = setup_game(level),
+    };
 
     let initial_state =
         State {
@@ -268,10 +340,10 @@ fn main() {
     let mut last_state = initial_state;
 
     loop {
-        let a = range_operands.ind_sample(&mut rng_a);
-        let b = range_operands.ind_sample(&mut rng_b);
-        let kind : Kind = rng_kind.gen();
-        let (function, description) = functions[kind as uint];
+        let a = game.ranges_operands[0].ind_sample(&mut game.rng_a);
+        let b = game.ranges_operands[1].ind_sample(&mut game.rng_b);
+        let kind : Kind = game.rng_kind.gen();
+        let (ref function, ref description) = game.functions[kind as uint];
 
         print!("{}   {} {} {} = ", sm.invitation, a, description, b);
 
