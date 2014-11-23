@@ -194,6 +194,7 @@ fn do_output(s: &State, sm: &SymbolMap,
     if maybe_term.is_some() {
         let mut term = term::stdout().unwrap();
         term.fg(color).unwrap();
+        term.attr(term::attr::Bold).unwrap();
         (write!(term, "{:1}", mark)).unwrap();
         term.reset().unwrap();
     } else {
