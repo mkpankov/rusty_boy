@@ -76,26 +76,19 @@ fn setup_symbols<'a>() -> SymbolMap<'a> {
     }
 }
 
-#[deriving(PartialEq, Eq, PartialOrd, Ord)]
+#[deriving(PartialEq, Eq, PartialOrd, Ord, Show, FromPrimitive)]
 enum Kind {
     Add_ = 0,
     Sub_,
     Mul_,
 }
 
-impl std::rand::Rand for Kind {
-    fn rand<R: Rng>(rng: &mut R) -> Kind {
-        // FIXME: This should be inferred from number of available functions
-        let range = Range::new(1i, 2);
-        let kind_num = range.ind_sample(rng);
-        match kind_num {
-            1 => Add_,
-            2 => Sub_,
-            3 => Mul_,
-            _ => panic!("we couldn't get anything else from rng"),
-        }
-    }
+
+fn rand_kind<R: Rng>(low: Kind, high: Kind, rng: &mut R) -> Kind {
+    let r = Range::new(low as uint, high as uint);
+    from_uint(r.ind_sample(rng)).unwrap()
 }
+
 
 fn handle_input<'a>(
     r: Round,
@@ -318,6 +311,13 @@ fn setup_game<'a>(l: Level) -> Game {
 
 fn main() {
     let sm = setup_symbols();
+    let mut rng = rand::task_rng();
+    for _ in range(0i, 100) {
+        let r11 = rand_kind(Add_, Sub_, &mut rng);
+        let r22 = rand_kind(Add_, Mul_, &mut rng);
+        println!("{} {}", r11, r22);
+    }
+    return;
 
     let level = read_level();
     let mut game;
@@ -342,8 +342,9 @@ fn main() {
     loop {
         let a = game.ranges_operands[0].ind_sample(&mut game.rng_a);
         let b = game.ranges_operands[1].ind_sample(&mut game.rng_b);
-        let kind : Kind = game.rng_kind.gen();
-        let (ref function, ref description) = game.functions[kind as uint];
+        let mut r = rand::task_rng();
+        let kind = r.gen();
+        let (ref function, ref description) = game.functions[kind];
 
         print!("{}   {} {} {} = ", sm.invitation, a, description, b);
 
