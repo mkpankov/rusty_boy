@@ -9,7 +9,7 @@ extern crate scan_util;
 extern crate term;
 extern crate time;
 
-use serialize::{json, Decodable};
+use serialize::json;
 use std::io;
 use std::num::{pow, from_int, from_uint, from_u64, from_f64};
 use std::rand;
