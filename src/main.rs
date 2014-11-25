@@ -274,11 +274,12 @@ fn read_level() -> Result<Level, String> {
 }
 
 struct Game {
-     ranges_operands: Vec<Range<int>>,
-     rng_a: TaskRng,
-     rng_b: TaskRng,
-     rng_kind: TaskRng,
-     functions: Vec<(fn(&int, &int) -> int, String)>,
+    ranges_operands: Vec<Range<int>>,
+    range_kind: Range<uint>,
+    rng_a: TaskRng,
+    rng_b: TaskRng,
+    rng_kind: TaskRng,
+    functions: Vec<(fn(&int, &int) -> int, String)>,
 }
 
 fn setup_game<'a>(l: Level) -> Game {
@@ -286,6 +287,8 @@ fn setup_game<'a>(l: Level) -> Game {
     for i in l.operands_digits.iter() {
         ranges_operands.push(Range::new(1, 10 ** i));
     }
+    // TODO: Setup a proper mapping of allowed functions
+    let range_kind = Range::new(0, l.functions.len());
     let rng_a =    rand::task_rng();
     let rng_b =    rand::task_rng();
     let rng_kind = rand::task_rng();
@@ -300,8 +303,10 @@ fn setup_game<'a>(l: Level) -> Game {
             _   => continue,
         }
     }
+
     Game {
         ranges_operands: ranges_operands,
+        range_kind: range_kind,
         rng_a: rng_a,
         rng_b: rng_b,
         rng_kind: rng_kind,
@@ -311,14 +316,6 @@ fn setup_game<'a>(l: Level) -> Game {
 
 fn main() {
     let sm = setup_symbols();
-    let mut rng = rand::task_rng();
-    for _ in range(0i, 100) {
-        let r11 = rand_kind(Add_, Sub_, &mut rng);
-        let r22 = rand_kind(Add_, Mul_, &mut rng);
-        println!("{} {}", r11, r22);
-    }
-    return;
-
     let level = read_level();
     let mut game;
     match level {
@@ -342,8 +339,7 @@ fn main() {
     loop {
         let a = game.ranges_operands[0].ind_sample(&mut game.rng_a);
         let b = game.ranges_operands[1].ind_sample(&mut game.rng_b);
-        let mut r = rand::task_rng();
-        let kind = r.gen();
+        let kind = game.range_kind.ind_sample(&mut game.rng_kind);
         let (ref function, ref description) = game.functions[kind];
 
         print!("{}   {} {} {} = ", sm.invitation, a, description, b);
