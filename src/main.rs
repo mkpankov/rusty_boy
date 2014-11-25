@@ -10,6 +10,8 @@ extern crate term;
 extern crate time;
 
 use serialize::json;
+use std::io::fs::PathExtensions;
+use std::io::fs;
 use std::io;
 use std::num::{pow, from_int, from_uint, from_u64, from_f64};
 use std::rand;
@@ -250,18 +252,17 @@ struct State<'a> {
     is_finished: bool,
 }
 
-fn read_level() -> Result<Level, String> {
-    let path_level_beginner = Path::new("beginner.lvl.json");
-    let mut file = match std::io::File::open(&path_level_beginner) {
+fn read_level(path: &Path) -> Result<Level, String> {
+    let mut file = match std::io::File::open(path) {
         Err(why) =>
-            return Err(format!("couldn't open {}: {}", path_level_beginner.display(), why)),
+            return Err(format!("couldn't open {}: {}", path.display(), why)),
         Ok(file) => file,
     };
 
     let level_encoded;
     match file.read_to_string() {
         Err(why) =>
-            return Err(format!("couldn't read {}: {}", path_level_beginner.display(), why)),
+            return Err(format!("couldn't read {}: {}", path.display(), why)),
         Ok(string) => level_encoded = string,
     };
 
@@ -316,7 +317,41 @@ fn setup_game<'a>(l: Level) -> Game {
 
 fn main() {
     let sm = setup_symbols();
-    let level = read_level();
+
+    let level;
+    let level_dir = Path::new(".");
+    let maybe_files = fs::readdir(&level_dir);
+    match maybe_files {
+        Err(why) => panic!("Failed to read {} directory: {}",
+                           level_dir.display(), why),
+        Ok(files) => {
+            let levels: Vec<&Path> = files.iter().filter(
+                |p| p.filename_str().unwrap().ends_with(".lvl.json")).collect();
+            let levels_displays : Vec<std::path::Display<Path>> =
+                levels.iter().map(|p| p.display()).collect();
+            println!("Found levels:");
+            for (i, l) in levels_displays.iter().enumerate() {
+                println!("{}. {}", i + 1, l);
+            }
+            print!("Select one: ");
+            let result = io::stdio::stdin().read_line();
+            match result {
+                Err(_) => panic!("Failed to read the choice."),
+                Ok(string) => {
+                    let trimmed =
+                        string.as_slice().trim_chars(['\r', '\n'].as_slice());
+                    let maybe_choice: Option<uint> = from_str(trimmed);
+                    match maybe_choice {
+                        None => panic!("Failed to parse unsigned integer from choice"),
+                        Some(choice) => {
+                            level = read_level(levels[choice - 1]);
+                        }
+                    }
+                }
+            }
+        },
+    }
+
     let mut game;
     match level {
         Err(why) => panic!("{}", why),
