@@ -315,10 +315,9 @@ fn setup_game<'a>(l: Level) -> Game {
     }
 }
 
-fn main() {
-    let sm = setup_symbols();
 
-    let level;
+fn choose_load_level() -> Result<Level, String> {
+    let maybe_level;
     let level_dir = Path::new(".");
     let maybe_files = fs::readdir(&level_dir);
     match maybe_files {
@@ -344,16 +343,23 @@ fn main() {
                     match maybe_choice {
                         None => panic!("Failed to parse unsigned integer from choice"),
                         Some(choice) => {
-                            level = read_level(levels[choice - 1]);
+                            maybe_level = read_level(levels[choice - 1]);
                         }
                     }
                 }
             }
         },
     }
+    maybe_level
+}
+
+
+fn main() {
+    let sm = setup_symbols();
+    let maybe_level = choose_load_level();
 
     let mut game;
-    match level {
+    match maybe_level {
         Err(why) => panic!("{}", why),
         Ok(level) => game = setup_game(level),
     };
