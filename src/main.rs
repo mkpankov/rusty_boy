@@ -148,14 +148,14 @@ fn handle_input<'a>(
             let is_correct = c_user == c_real;
             new_combo = s.combo + 1;
             let mult = full_multiplier(r);
-            let pending = 1000i * from_uint(mult)
+            let pending = 1i * from_uint(mult)
                 .expect("Couldn't convert multiplier to int");
 
             let combed = if is_correct {
                 pending * from_uint(s.combo)
                     .expect("Couldn't convert combo to int")
             } else {
-                -1000
+                -1
             };
             let new_score = s.score + combed;
 
