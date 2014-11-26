@@ -42,16 +42,20 @@ fn full_multiplier(time: int) -> uint {
 
 #[allow(dead_code)]
 fn compute_mean(times: Vec<u64>) -> f64 {
-    let n : f64 = from_uint(times.len()).unwrap();
-    let sum : f64 = from_u64(times.iter().fold(0, |a, &e| a + e)).unwrap();
+    let n : f64 = from_uint(times.len())
+        .expect("Couldn't convert length of times in compute_mean");
+    let sum : f64 = from_u64(times.iter().fold(0, |a, &e| a + e))
+        .expect("Couldn't convert sum of times in compute_mean");
     sum / n
 }
 
 fn compute_median(mut times: Vec<u64>) -> f64 {
     times.sort();
     match times.len() {
-        n if n % 2 == 0 => from_u64( (times[n/2] + times[n/2 - 1]) / 2 ).unwrap(),
-        n               => from_u64(  times[n/2] ).unwrap(),
+        n if n % 2 == 0 => from_u64( (times[n/2] + times[n/2 - 1]) / 2 )
+            .expect("Couldn't convert median in case of even length"),
+        n               => from_u64(  times[n/2] )
+            .expect("Couldn't convert median in case of odd length"),
     }
 }
 
@@ -87,7 +91,8 @@ enum Kind {
 
 fn rand_kind<R: Rng>(low: Kind, high: Kind, rng: &mut R) -> Kind {
     let r = Range::new(low as uint, high as uint);
-    from_uint(r.ind_sample(rng)).unwrap()
+    from_uint(r.ind_sample(rng))
+        .expect("Couldn't convert uint to Kind in rand_kind")
 }
 
 
@@ -122,14 +127,16 @@ fn handle_input<'a>(
             let is_correct = c_user == c_real;
             new_combo = s.combo + 1;
             let mult = full_multiplier(diff_s_int);
-            let pending = 1000i * from_uint(mult).unwrap();
+            let pending = 1000i * from_uint(mult)
+                .expect("Couldn't convert multiplier to int");
 
             let combed = if is_correct {
-                pending * from_uint(s.combo).unwrap()
+                pending * from_uint(s.combo)
+                    .expect("Couldn't convert combo to int")
             } else {
                 -1000
             };
-            let new_score = s.score + from_int(combed).unwrap();
+            let new_score = s.score + combed;
 
             do_output(&s, &sm,
                       is_correct, pending, combed, new_score, c_real, mult);
@@ -191,11 +198,18 @@ fn do_output(s: &State, sm: &SymbolMap,
     let maybe_term = term::stdout();
 
     if maybe_term.is_some() {
-        let mut term = term::stdout().unwrap();
-        term.fg(color).unwrap();
-        term.attr(term::attr::Bold).unwrap();
-        (write!(term, "{:1}", mark)).unwrap();
-        term.reset().unwrap();
+        let mut term = term::stdout()
+            .expect("Impossible happened: maybe_term is Some(_) but we couldn't unwrap it");
+
+        // Remember Result<_> panics with Err(message) if it's not Ok(_)
+        term.fg(color)
+            .unwrap();
+        term.attr(term::attr::Bold)
+            .unwrap();
+        (write!(term, "{:1}", mark))
+            .unwrap();
+        term.reset()
+            .unwrap();
     } else {
         print!("{:1}", mark);
     }
@@ -324,7 +338,9 @@ fn choose_load_level() -> Result<Level, String> {
                            level_dir.display(), why),
         Ok(files) => {
             let levels: Vec<&Path> = files.iter().filter(
-                |p| p.filename_str().unwrap().ends_with(".lvl.json")).collect();
+                |p| p.filename_str()
+                    .expect("Couldn't represent filename as str")
+                    .ends_with(".lvl.json")).collect();
             let levels_displays : Vec<std::path::Display<Path>> =
                 levels.iter().map(|p| p.display()).collect();
             println!("Found levels:");
