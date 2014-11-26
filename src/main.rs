@@ -10,7 +10,6 @@ extern crate term;
 extern crate time;
 
 use serialize::json;
-use std::io::fs::PathExtensions;
 use std::io::fs;
 use std::io;
 use std::num::{pow, from_int, from_uint, from_u64, from_f64};
