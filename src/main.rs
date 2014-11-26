@@ -12,6 +12,7 @@ extern crate time;
 use serialize::json;
 use std::io::fs;
 use std::io;
+use std::num::Float as Float;
 use std::num::{pow, from_int, from_uint, from_u64, from_f64};
 use std::rand;
 use std::rand::{Rng, TaskRng};
@@ -33,11 +34,33 @@ fn time_multiplier(time: f64) -> f64 {
     y
 }
 
-fn full_multiplier(time: int) -> uint {
+fn complexity_multiplier(r: Round) -> f64 {
+    let answer = r.a + r.b;
+    let f : f64 = from_int(answer)
+        .expect("Couldn't convert answer to float");
+    let l = Float::log10(f);
+    let fc = match r.description.as_slice() {
+        "+" => 2.,
+        "-" => 3.,
+        "*" => 4.,
+        "/" => 8.,
+        _   => panic!("Couldn't calculate complexity for unknown function")
+    };
+    l * fc
+}
+
+fn full_multiplier(r: Round) -> uint {
+    let time_us = r.end - r.start;
+    let time = time_us / pow(10, 9);
+    info!("time_us: {}, time: {}", time_us, time);
     let tm =
-        time_multiplier(from_int(time).expect("Time of trial can't be converted to f64"));
+        time_multiplier(from_u64(time)
+                        .expect("Time of trial can't be converted to f64"));
+    let cm =
+        complexity_multiplier(r);
     from_f64(
-        std::num::Float::round (10. * tm)).expect("Full multiplier can't be converted to int")
+        std::num::Float::round (10. * tm * cm))
+        .expect("Full multiplier can't be converted to int")
 }
 
 #[allow(dead_code)]
@@ -103,10 +126,8 @@ fn handle_input<'a>(
 ) -> State<'a>
 {
     let diff_ms = (r.end - r.start) / pow(10, 6);
-    let diff_s  = (r.end - r.start) / pow(10, 9);
-    let diff_s_int = from_u64(diff_s).expect("Time of trial can't be converted to int");
 
-    let trimmed = r.input.as_slice().trim_chars(['\r', '\n'].as_slice());
+    let trimmed = r.input.clone().trim_chars(['\r', '\n'].as_slice());
     let new_is_finished;
     let mut new_times = s.times.clone();
     new_times.push(diff_ms);
@@ -126,7 +147,7 @@ fn handle_input<'a>(
             let c_real : int = (*r.function)(&r.a, &r.b);
             let is_correct = c_user == c_real;
             new_combo = s.combo + 1;
-            let mult = full_multiplier(diff_s_int);
+            let mult = full_multiplier(r);
             let pending = 1000i * from_uint(mult)
                 .expect("Couldn't convert multiplier to int");
 
@@ -245,6 +266,7 @@ struct Round<'a> {
     a: int,
     b: int,
     function: &'a fn(&int, &int) -> int,
+    description: String,
 
     start: u64,
     end: u64,
@@ -414,6 +436,7 @@ fn main() {
                         a: a,
                         b: b,
                         function: function,
+                        description: description.to_string(),
                     },
                     last_state,
                     sm);
