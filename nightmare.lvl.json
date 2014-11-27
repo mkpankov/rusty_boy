@@ -1,0 +1,5 @@
+{
+    "functions": ["+", "-", "*", "/"],
+    "operands_digits": [3, 2],
+    "timeout": 30
+}
