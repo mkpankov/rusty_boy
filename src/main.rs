@@ -219,7 +219,7 @@ fn do_output(s: &State, sm: &SymbolMap,
     let maybe_term = term::stdout();
 
     if maybe_term.is_some() {
-        let mut term = term::stdout()
+        let mut term = maybe_term
             .expect("Impossible happened: maybe_term is Some(_) but we couldn't unwrap it");
 
         // Remember Result<_> panics with Err(message) if it's not Ok(_)
