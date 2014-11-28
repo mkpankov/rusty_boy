@@ -61,7 +61,7 @@ fn full_multiplier(r: Round) -> uint {
     let cm =
         complexity_multiplier(r);
     from_f64(
-        std::num::Float::round (10. * tm * cm))
+        Float::round (10. * tm * cm))
         .expect("Full multiplier can't be converted to int")
 }
 
@@ -237,7 +237,43 @@ fn do_output(s: &State, sm: &SymbolMap,
         print!("{:1}", mark);
     }
 
-    println!("{:47}{:32}", message, new_score);
+    let maybe_term2 = term::stdout();
+    if is_correct {
+        if maybe_term2.is_some() {
+            let mut term = maybe_term2
+                .expect("Impossible happened: maybe_term2 is Some(_) but we couldn't unwrap it");
+            (write!(term, "{:15}", message.slice_to(15)))
+                .unwrap();
+            let c = choose_color(combed);
+            term.fg(c)
+                .unwrap();
+            term.attr(term::attr::Bold)
+                .unwrap();
+            (write!(term, "{:10}", message.slice(15,25)))
+                .unwrap();
+            term.reset()
+                .unwrap();
+            (write!(term, "{:12}{:32}\n", "", new_score))
+                .unwrap();
+        } else {
+            println!("{:47}{:32}", message, new_score);
+        }
+    } else {
+        println!("{:47}{:32}", message, new_score);
+    }
+}
+
+fn choose_color(points: int) -> term::color::Color {
+    let points_f: f64 = from_int(points).expect("Couldn't convert points to float");
+    let l = Float::log10(points_f);
+    let r: int = from_f64(Float::round(l)).expect("Couldn't convert modifier to int");
+    match r {
+        0...1 => term::color::BLUE,
+        2 => term::color::GREEN,
+        3 => term::color::YELLOW,
+        4 => term::color::RED,
+        _ => term::color::WHITE,
+    }
 }
 
 #[deriving(Decodable, Encodable, Show)]
