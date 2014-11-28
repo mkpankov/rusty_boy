@@ -19,6 +19,8 @@ use std::rand::{Rng, TaskRng};
 use std::rand::distributions::{IndependentSample, Range};
 use time::precise_time_ns;
 
+static BASE_POINTS: int = 1i;
+
 fn time_multiplier(time: f64) -> f64 {
     let x = time;
 
@@ -148,38 +150,38 @@ fn handle_input<'a>(
             let is_correct = c_user == c_real;
             new_combo = s.combo + 1;
             let mult = full_multiplier(r);
-            let pending = 1i * from_uint(mult)
+            let pending = BASE_POINTS * from_uint(mult)
                 .expect("Couldn't convert multiplier to int");
 
-            let combed = if is_correct {
-                pending * from_uint(s.combo)
-                    .expect("Couldn't convert combo to int")
-            } else {
-                -1
-            };
+            let combed = pending * from_uint(s.combo)
+                .expect("Couldn't convert combo to int");
             let new_score = s.score + combed;
 
+            let new_s = if is_correct {
+                State {
+                    times: new_times,
+                    correct: s.correct + 1,
+                    incorrect: s.incorrect,
+                    attempts: new_attempts,
+                    combo: new_combo,
+                    max_combo: new_combo,
+                    score: new_score,
+                    is_finished: new_is_finished,
+                }
+            } else {
+                produce_incorrect(&s)
+            };
+
             do_output(&s, &sm,
-                      is_correct, pending, combed, new_score, c_real, mult);
+                      is_correct, pending, new_s.score - s.score,
+                      new_score, c_real, mult);
             info!(" {} ms", diff_ms);
 
-            if ! is_correct {
-                return produce_incorrect(s);
-            }
-            State {
-                times: new_times,
-                correct: s.correct + 1,
-                incorrect: s.incorrect,
-                attempts: new_attempts,
-                combo: new_combo,
-                max_combo: new_combo,
-                score: new_score,
-                is_finished: new_is_finished,
-            }
+            new_s
         },
         None => {
             println!("You didn't input a number.");
-            produce_incorrect(s)
+            produce_incorrect(&s)
         },
     }
 }
@@ -245,17 +247,17 @@ struct Level {
     timeout: int,
 }
 
-fn produce_incorrect<'a, 'b>(s: State<'a>) -> State<'b> {
+fn produce_incorrect<'a, 'b>(s: &State<'a>) -> State<'b> {
     let new_attempts = s.attempts + 1;
     let new_is_finished = new_attempts >= 10;
     State {
-        times: s.times,
+        times: s.times.clone(),
         correct: s.correct,
         incorrect: s.incorrect + 1,
         attempts: new_attempts,
         combo: 1,
         max_combo: s.max_combo,
-        score: s.score - 1000,
+        score: s.score - BASE_POINTS,
         is_finished: new_is_finished,
     }
 }
