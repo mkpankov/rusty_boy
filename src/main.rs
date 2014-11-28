@@ -249,11 +249,11 @@ fn do_output(s: &State, sm: &SymbolMap,
                 .unwrap();
             term.attr(term::attr::Bold)
                 .unwrap();
-            (write!(term, "{:10}", message.slice(15,25)))
+            (write!(term, "{:10}", message.slice(16,26)))
                 .unwrap();
             term.reset()
                 .unwrap();
-            (write!(term, "{:12}{:32}\n", "", new_score))
+            (write!(term, "{:22}{:32}\n", "", new_score))
                 .unwrap();
         } else {
             println!("{:47}{:32}", message, new_score);
