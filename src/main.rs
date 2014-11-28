@@ -564,7 +564,7 @@ fn insert_record(recs: &mut Vec<Record>, saved: Option<Record>, new: int) {
             recs.push( Record { points: new, player: name_ } );
             recs.sort_by(
                 |&Record { points: p_a, .. }, &Record { points: p_b, .. }|
-                p_a.cmp(&p_b));
+                p_b.cmp(&p_a));
         },
         Err(_) => {
             match saved {
