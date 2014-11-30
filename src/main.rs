@@ -218,48 +218,42 @@ fn do_output(s: &State, sm: &SymbolMap,
         } else {
             sm.wrongmark
         };
-    let maybe_term = term::stdout();
+    let mut maybe_term = term::stdout();
 
-    if maybe_term.is_some() {
-        let mut term = maybe_term
-            .expect("Impossible happened: maybe_term is Some(_) but we couldn't unwrap it");
-
-        // Remember Result<_> panics with Err(message) if it's not Ok(_)
-        term.fg(color)
-            .unwrap();
-        term.attr(term::attr::Bold)
-            .unwrap();
-        (write!(term, "{:1}", mark))
-            .unwrap();
-        term.reset()
-            .unwrap();
-    } else {
-        print!("{:1}", mark);
-    }
-
-    let maybe_term2 = term::stdout();
-    if is_correct {
-        if maybe_term2.is_some() {
-            let mut term = maybe_term2
-                .expect("Impossible happened: maybe_term2 is Some(_) but we couldn't unwrap it");
-            (write!(term, "{:15}", message.slice_to(15)))
-                .unwrap();
-            let c = choose_color(combed);
-            term.fg(c)
+    match maybe_term {
+        None => {
+            print!("{:1}", mark);
+            println!("{:47}{:32}", message, new_score);
+        },
+        Some(ref mut term) => {
+            // Remember Result<_> panics with Err(message) if it's not Ok(_)
+            term.fg(color)
                 .unwrap();
             term.attr(term::attr::Bold)
                 .unwrap();
-            (write!(term, "{:10}", message.slice(16,26)))
+            (write!(term, "{:1}", mark))
                 .unwrap();
             term.reset()
                 .unwrap();
-            (write!(term, "{:22}{:32}\n", "", new_score))
-                .unwrap();
-        } else {
-            println!("{:47}{:32}", message, new_score);
-        }
-    } else {
-        println!("{:47}{:32}", message, new_score);
+
+            if is_correct {
+                (write!(term, "{:15}", message.slice_to(15)))
+                    .unwrap();
+                let c = choose_color(combed);
+                term.fg(c)
+                    .unwrap();
+                term.attr(term::attr::Bold)
+                    .unwrap();
+                (write!(term, "{:10}", message.slice(16,26)))
+                    .unwrap();
+                term.reset()
+                    .unwrap();
+                (write!(term, "{:22}{:32}\n", "", new_score))
+                    .unwrap();
+            } else {
+                println!("{:47}{:32}", message, new_score);
+            }
+        },
     }
 }
 
