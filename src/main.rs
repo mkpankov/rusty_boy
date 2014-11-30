@@ -574,7 +574,7 @@ fn insert_record(recs: &mut Vec<Record>, saved: Option<Record>, new: int) {
 fn process_records(recs: &mut Vec<Record>, new : int) {
     let n = recs.len();
     if n >= 10 {
-        match &mut recs[1] {
+        match &mut recs[n - 1] {
             &Record { points: old, .. } => {
                 if old < new {
                     let saved = recs.pop();
