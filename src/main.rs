@@ -12,6 +12,7 @@ extern crate time;
 use serialize::json;
 use std::io::fs;
 use std::io;
+use std::num::Int;
 use std::num::Float as Float;
 use std::num::{pow, from_int, from_uint, from_u64, from_f64};
 use std::rand;
@@ -53,7 +54,7 @@ fn complexity_multiplier(r: Round) -> f64 {
 
 fn full_multiplier(r: Round) -> uint {
     let time_us = r.end - r.start;
-    let time = time_us / pow(10, 9);
+    let time = time_us / 10u64.pow(9);
     info!("time_us: {}, time: {}", time_us, time);
     let tm =
         time_multiplier(from_u64(time)
@@ -127,7 +128,7 @@ fn handle_input<'a>(
     sm: SymbolMap,
 ) -> State<'a>
 {
-    let diff_ms = (r.end - r.start) / pow(10, 6);
+    let diff_ms = (r.end - r.start) / 10u64.pow(6);
 
     let trimmed = r.input.clone().trim_chars(['\r', '\n'].as_slice());
     let new_is_finished;
@@ -499,8 +500,8 @@ fn process_results<'a>(s: State<'a>) {
 
     println!("====\n\
              Your score: {}\n\
-             Correct answers: {} ({rate:.0f} %), incorrect: {}, total: {}.\n\
-             Median time: {:.2f} s.",
+             Correct answers: {} ({rate:.0} %), incorrect: {}, total: {}.\n\
+             Median time: {:.2} s.",
              s.score, s.correct, s.incorrect, s.correct + s.incorrect,
              time_stat / 1000., rate=rate);
 
@@ -595,7 +596,7 @@ fn write_records(recs: Vec<Record>) {
     for r in recs.iter() {
         match r {
             &Record { ref player, points } => {
-                let line = format!("player: \"{:s}\", points: \"{}\"\n",
+                let line = format!("player: \"{}\", points: \"{}\"\n",
                                    *player, points);
                 file.write(line.as_bytes()).unwrap();
             }
