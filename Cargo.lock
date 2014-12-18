@@ -2,9 +2,15 @@
 name = "rusty_boy"
 version = "0.0.1"
 dependencies = [
+ "bread 0.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "scan 0.5.3 (git+https://github.com/DanielKeep/rust-scan.git)",
  "scan_util 0.5.4 (git+https://github.com/DanielKeep/rust-scan-util.git)",
 ]
+
+[[package]]
+name = "bread"
+version = "0.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "scan"
