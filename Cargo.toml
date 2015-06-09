@@ -4,14 +4,16 @@ name = "rusty_boy"
 version = "0.0.1"
 authors = ["Michael Pankov <constantius9@gmail.com>"]
 
-[dependencies.scan]
-
-git = "https://github.com/DanielKeep/rust-scan.git"
-
-[dependencies.scan_util]
-
-git = "https://github.com/DanielKeep/rust-scan-util.git"
-
 [dependencies]
 
-bread = "*"
+log = "0.3"
+env_logger = "0.3"
+num = "0.1"
+rand = "0.3"
+rustc-serialize = "0.3"
+term = "0.2"
+time = "0.1"
+
+[dependencies.bread]
+
+git = "https://github.com/mkpankov/bread.git"

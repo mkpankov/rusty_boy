@@ -1,26 +1,26 @@
-#![feature(phase)]
-#[phase(plugin, link)] extern crate log;
-#[phase(plugin)] extern crate scan;
+#[macro_use]
+extern crate log;
+extern crate env_logger;
 
-extern crate serialize;
+extern crate num;
 
-extern crate scan_util;
+extern crate rand;
+
+extern crate rustc_serialize;
 
 extern crate term;
 extern crate time;
 
-use serialize::json;
-use std::io::fs;
+use rand::Rng;
+use rand::distributions::range::Range;
+use rand::ThreadRng;
+
+use rustc_serialize::json;
 use std::io;
-use std::num::Int;
-use std::num::Float as Float;
-use std::num::{pow, from_int, from_uint, from_u64, from_f64};
-use std::rand;
-use std::rand::{Rng, TaskRng};
-use std::rand::distributions::{IndependentSample, Range};
+use std::path::Path;
 use time::precise_time_ns;
 
-static BASE_POINTS: int = 1i;
+static BASE_POINTS: isize = 1isize;
 
 fn time_multiplier(time: f64) -> f64 {
     let x = time;
@@ -32,17 +32,17 @@ fn time_multiplier(time: f64) -> f64 {
         x if x > 5.   => 1.,
         _ => 1. / x
     };
-    info!("tm({}) -> {}", x, y)
+    info!("tm({}) -> {}", x, y);
 
     y
 }
 
 fn complexity_multiplier(r: Round) -> f64 {
     let answer = r.a + r.b;
-    let f : f64 = from_int(answer)
+    let f : f64 = num::FromPrimitive::from_isize(answer)
         .expect("Couldn't convert answer to float");
-    let l = Float::log10(f);
-    let fc = match r.description.as_slice() {
+    let l = num::Float::log10(f);
+    let fc = match &*r.description {
         "+" => 2.,
         "-" => 3.,
         "*" => 4.,
@@ -52,25 +52,28 @@ fn complexity_multiplier(r: Round) -> f64 {
     l * fc
 }
 
-fn full_multiplier(r: Round) -> uint {
+fn full_multiplier(r: Round) -> usize {
     let time_us = r.end - r.start;
     let time = time_us / 10u64.pow(9);
     info!("time_us: {}, time: {}", time_us, time);
     let tm =
-        time_multiplier(from_u64(time)
-                        .expect("Time of trial can't be converted to f64"));
+        time_multiplier(
+            num::FromPrimitive::from_u64(time)
+                .expect("Time of trial can't be converted to f64"));
     let cm =
         complexity_multiplier(r);
-    from_f64(
-        Float::round (10. * tm * cm))
-        .expect("Full multiplier can't be converted to int")
+    num::FromPrimitive::from_f64(
+        num::Float::round (10. * tm * cm))
+        .expect("Full multiplier can't be converted to isize")
 }
 
 #[allow(dead_code)]
 fn compute_mean(times: Vec<u64>) -> f64 {
-    let n : f64 = from_uint(times.len())
+    let n : f64 =
+        num::FromPrimitive::from_usize(times.len())
         .expect("Couldn't convert length of times in compute_mean");
-    let sum : f64 = from_u64(times.iter().fold(0, |a, &e| a + e))
+    let sum : f64 =
+        num::FromPrimitive::from_u64(times.iter().fold(0, |a, &e| a + e))
         .expect("Couldn't convert sum of times in compute_mean");
     sum / n
 }
@@ -78,9 +81,11 @@ fn compute_mean(times: Vec<u64>) -> f64 {
 fn compute_median(mut times: Vec<u64>) -> f64 {
     times.sort();
     match times.len() {
-        n if n % 2 == 0 => from_u64( (times[n/2] + times[n/2 - 1]) / 2 )
+        n if n % 2 == 0 =>
+            num::FromPrimitive::from_u64( (times[n/2] + times[n/2 - 1]) / 2 )
             .expect("Couldn't convert median in case of even length"),
-        n               => from_u64(  times[n/2] )
+        n               =>
+            num::FromPrimitive::from_u64(  times[n/2] )
             .expect("Couldn't convert median in case of odd length"),
     }
 }
@@ -92,7 +97,7 @@ struct SymbolMap<'a> {
 }
 
 fn setup_symbols<'a>() -> SymbolMap<'a> {
-    if std::os::args().iter().any(|x| x.as_slice() == "--unicode") {
+    if std::env::args().any(|x| x == "--unicode") {
         SymbolMap {
             invitation: "□",
             checkmark: "✓",
@@ -107,7 +112,7 @@ fn setup_symbols<'a>() -> SymbolMap<'a> {
     }
 }
 
-#[deriving(PartialEq, Eq, PartialOrd, Ord, Show, FromPrimitive)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Debug)]
 enum Kind {
     Add_ = 0,
     Sub_,
@@ -115,26 +120,42 @@ enum Kind {
 }
 
 
+impl From<usize> for Kind {
+    fn from(x: usize) -> Kind {
+        use Kind::*;
+        match x {
+            0 => Add_,
+            1 => Sub_,
+            2 => Mul_,
+            _ => panic!("can't convert it"),
+        }
+    }
+}
+
+
 fn rand_kind<R: Rng>(low: Kind, high: Kind, rng: &mut R) -> Kind {
-    let r = Range::new(low as uint, high as uint);
-    from_uint(r.ind_sample(rng))
-        .expect("Couldn't convert uint to Kind in rand_kind")
+    use rand::distributions::IndependentSample;
+
+    let r = Range::new(low as usize, high as usize);
+    let n: usize = r.ind_sample(rng);
+    Kind::from(n)
 }
 
 
 fn handle_input<'a>(
     r: Round,
     s: State,
-    sm: SymbolMap,
-) -> State<'a>
+    sm: &SymbolMap,
+) -> State
 {
     let diff_ms = (r.end - r.start) / 10u64.pow(6);
 
-    let trimmed = r.input.clone().trim_chars(['\r', '\n'].as_slice());
+    let newlines: &[_] = &['\r', '\n'];
+    let trimmed = r.input.clone().trim_matches(newlines);
     let new_is_finished;
     let mut new_times = s.times.clone();
     new_times.push(diff_ms);
-    let maybe_c_user : Option<int> = from_str(trimmed);
+    let maybe_c_user: Result<isize, _> = trimmed.parse();
     let new_attempts;
     let new_combo;
 
@@ -146,16 +167,14 @@ fn handle_input<'a>(
     }
 
     match maybe_c_user {
-        Some(c_user) => {
-            let c_real : int = (*r.function)(&r.a, &r.b);
+        Ok(c_user) => {
+            let c_real : isize = (*r.function)(r.a, r.b);
             let is_correct = c_user == c_real;
             new_combo = s.combo + 1;
             let mult = full_multiplier(r);
-            let pending = BASE_POINTS * from_uint(mult)
-                .expect("Couldn't convert multiplier to int");
+            let pending = BASE_POINTS * mult as isize;
 
-            let combed = pending * from_uint(s.combo)
-                .expect("Couldn't convert combo to int");
+            let combed: isize = pending * s.combo as isize;
             let new_score = s.score + combed;
 
             let new_s = if is_correct {
@@ -180,7 +199,7 @@ fn handle_input<'a>(
 
             new_s
         },
-        None => {
+        Err(_) => {
             println!("You didn't input a number.");
             produce_incorrect(&s)
         },
@@ -189,8 +208,8 @@ fn handle_input<'a>(
 
 fn do_output(s: &State, sm: &SymbolMap,
              is_correct: bool,
-             pending: int, combed: int, new_score: int,
-             c_real: int, mult: uint) {
+             pending: isize, combed: isize, new_score: isize,
+             c_real: isize, mult: usize) {
 
     let explanation =
         if mult == 0 {
@@ -230,7 +249,7 @@ fn do_output(s: &State, sm: &SymbolMap,
             // Remember Result<_> panics with Err(message) if it's not Ok(_)
             term.fg(color)
                 .unwrap();
-            term.attr(term::attr::Bold)
+            term.attr(term::Attr::Bold)
                 .unwrap();
             (write!(term, "{:1}", mark))
                 .unwrap();
@@ -238,14 +257,14 @@ fn do_output(s: &State, sm: &SymbolMap,
                 .unwrap();
 
             if is_correct {
-                (write!(term, "{:15}", message.slice_to(15)))
+                (write!(term, "{:15}", &message[0..15]))
                     .unwrap();
                 let c = choose_color(combed);
                 term.fg(c)
                     .unwrap();
-                term.attr(term::attr::Bold)
+                term.attr(term::Attr::Bold)
                     .unwrap();
-                (write!(term, "{:10}", message.slice(16,26)))
+                (write!(term, "{:10}", &message[16..26]))
                     .unwrap();
                 term.reset()
                     .unwrap();
@@ -258,10 +277,14 @@ fn do_output(s: &State, sm: &SymbolMap,
     }
 }
 
-fn choose_color(points: int) -> term::color::Color {
-    let points_f: f64 = from_int(points).expect("Couldn't convert points to float");
-    let l = Float::log10(points_f);
-    let r: int = from_f64(Float::round(l)).expect("Couldn't convert modifier to int");
+fn choose_color(points: isize) -> term::color::Color {
+    let points_f: f64 =
+        num::FromPrimitive::from_isize(points)
+        .expect("Couldn't convert points to float");
+    let l = num::Float::log10(points_f);
+    let r: isize =
+        num::FromPrimitive::from_f64(num::Float::round(l))
+        .expect("Couldn't convert modifier to isize");
     match r {
         0...1 => term::color::BLUE,
         2 => term::color::GREEN,
@@ -271,14 +294,14 @@ fn choose_color(points: int) -> term::color::Color {
     }
 }
 
-#[deriving(Decodable, Encodable, Show)]
+#[derive(RustcDecodable, RustcEncodable, Debug)]
 struct Level {
     functions: Vec<String>,
-    operands_digits: Vec<int>,
-    timeout: int,
+    operands_digits: Vec<isize>,
+    timeout: isize,
 }
 
-fn produce_incorrect<'a, 'b>(s: &State<'a>) -> State<'b> {
+fn produce_incorrect<'a, 'b>(s: &State) -> State {
     let new_attempts = s.attempts + 1;
     let new_is_finished = new_attempts >= 10;
     State {
@@ -296,46 +319,50 @@ fn produce_incorrect<'a, 'b>(s: &State<'a>) -> State<'b> {
 struct Round<'a> {
     input: &'a str,
 
-    a: int,
-    b: int,
-    function: &'a fn(&int, &int) -> int,
+    a: isize,
+    b: isize,
+    function: &'a Fn(isize, isize) -> isize,
     description: String,
 
     start: u64,
     end: u64,
 }
 
-struct State<'a> {
+struct State {
     times: Vec<u64>,
 
-    correct: uint,
-    incorrect: uint,
-    attempts: uint,
+    correct: usize,
+    incorrect: usize,
+    attempts: usize,
 
-    combo: uint,
-    max_combo: uint,
+    combo: usize,
+    max_combo: usize,
 
-    score: int,
+    score: isize,
 
     is_finished: bool,
 }
 
-fn read_level(path: &Path) -> Result<Level, String> {
-    let mut file = match std::io::File::open(path) {
+fn read_level(path: &std::path::PathBuf) -> Result<Level, String> {
+    use std::io::Read;
+
+    let mut file = match std::fs::File::open(&path) {
         Err(why) =>
             return Err(format!("couldn't open {}: {}", path.display(), why)),
         Ok(file) => file,
     };
 
     let level_encoded;
-    match file.read_to_string() {
+    let mut string = String::new();
+    let r = file.read_to_string(&mut string);
+    match r {
         Err(why) =>
             return Err(format!("couldn't read {}: {}", path.display(), why)),
-        Ok(string) => level_encoded = string,
+        Ok(_) => level_encoded = string,
     };
 
     let level_decoded: json::DecodeResult<Level> =
-        json::decode(level_encoded.as_slice());
+        json::decode(&level_encoded);
     match level_decoded {
         Err(why) => Err(format!("{}", why)),
         Ok(level) => Ok(level),
@@ -343,12 +370,12 @@ fn read_level(path: &Path) -> Result<Level, String> {
 }
 
 struct Game {
-    ranges_operands: Vec<Range<int>>,
-    range_kind: Range<uint>,
-    rng_a: TaskRng,
-    rng_b: TaskRng,
-    rng_kind: TaskRng,
-    functions: Vec<(fn(&int, &int) -> int, String)>,
+    ranges_operands: Vec<Range<isize>>,
+    range_kind: Range<usize>,
+    rng_a: ThreadRng,
+    rng_b: ThreadRng,
+    rng_kind: ThreadRng,
+    functions: Vec<(fn(isize, isize) -> isize, String)>,
 }
 
 fn setup_game<'a>(l: Level) -> Game {
@@ -358,13 +385,14 @@ fn setup_game<'a>(l: Level) -> Game {
     }
     // TODO: Setup a proper mapping of allowed functions
     let range_kind = Range::new(0, l.functions.len());
-    let rng_a =    rand::task_rng();
-    let rng_b =    rand::task_rng();
-    let rng_kind = rand::task_rng();
+    let rng_a =    rand::thread_rng();
+    let rng_b =    rand::thread_rng();
+    let rng_kind = rand::thread_rng();
 
-    let mut functions = vec![];
-    for f in l.functions.iter() {
-        match f.as_slice() {
+    let mut functions: Vec<(fn(isize, isize) -> isize, String)> = vec![];
+    for f in l.functions {
+        use std::ops::{Add, Sub, Mul, Div};
+        match &*f {
             o @ "+" => functions.push((Add::add, o.to_string())),
             o @ "-" => functions.push((Sub::sub, o.to_string())),
             o @ "*" => functions.push((Mul::mul, o.to_string())),
@@ -385,35 +413,41 @@ fn setup_game<'a>(l: Level) -> Game {
 
 
 fn choose_load_level() -> Result<Level, String> {
+    use std::path::PathBuf;
+
     let maybe_level;
     let level_dir = Path::new(".");
-    let maybe_files = fs::readdir(&level_dir);
+    let maybe_files = std::fs::read_dir(&level_dir);
     match maybe_files {
         Err(why) => panic!("Failed to read {} directory: {}",
                            level_dir.display(), why),
         Ok(files) => {
-            let levels: Vec<&Path> = files.iter().filter(
-                |p| p.filename_str()
-                    .expect("Couldn't represent filename as str")
-                    .ends_with(".lvl.json")).collect();
-            let levels_displays : Vec<std::path::Display<Path>> =
+            let levels: Vec<PathBuf> = files
+                .map(|p| p.ok().expect("Couldn't represent filename as str")
+                     .path())
+                .filter(|p| p.ends_with(".lvl.json"))
+                .collect();
+            let levels_displays : Vec<std::path::Display> =
                 levels.iter().map(|p| p.display()).collect();
             println!("Found levels:");
             for (i, l) in levels_displays.iter().enumerate() {
                 println!("{}. {}", i + 1, l);
             }
             print!("Select one: ");
-            let result = io::stdio::stdin().read_line();
+
+            let mut string = String::new();
+            let result = io::stdin().read_line(&mut string);
             match result {
                 Err(_) => panic!("Failed to read the choice."),
-                Ok(string) => {
+                Ok(_) => {
+                    let newlines: &[_] = &['\r', '\n'];
                     let trimmed =
-                        string.as_slice().trim_chars(['\r', '\n'].as_slice());
-                    let maybe_choice: Option<uint> = from_str(trimmed);
+                        &string.trim_matches(newlines);
+                    let maybe_choice: Result<usize, _> = trimmed.parse();
                     match maybe_choice {
-                        None => panic!("Failed to parse unsigned integer from choice"),
-                        Some(choice) => {
-                            maybe_level = read_level(levels[choice - 1]);
+                        Err(_) => panic!("Failed to parse unsigned integer from choice"),
+                        Ok(choice) => {
+                            maybe_level = read_level(&levels[choice - 1]);
                         }
                     }
                 }
@@ -448,6 +482,8 @@ fn main() {
     let mut last_state = initial_state;
 
     loop {
+        use rand::distributions::IndependentSample;
+
         let a = game.ranges_operands[0].ind_sample(&mut game.rng_a);
         let b = game.ranges_operands[1].ind_sample(&mut game.rng_b);
         let kind = game.range_kind.ind_sample(&mut game.rng_kind);
@@ -456,14 +492,15 @@ fn main() {
         print!("{}   {} {} {} = ", sm.invitation, a, description, b);
 
         let start = precise_time_ns();
-        let result = io::stdio::stdin().read_line();
+        let mut string = String::new();
+        let result = io::stdin().read_line(&mut string);
         let end   = precise_time_ns();
 
         match result {
-            Ok(string) => {
+            Ok(_) => {
                 last_state = handle_input(
                     Round {
-                        input: string.as_slice(),
+                        input: &string,
                         start: start,
                         end: end,
                         a: a,
@@ -472,7 +509,7 @@ fn main() {
                         description: description.to_string(),
                     },
                     last_state,
-                    sm);
+                    &sm);
                 if last_state.is_finished {
                     break;
                 }
@@ -483,7 +520,7 @@ fn main() {
     process_results(last_state);
 }
 
-fn process_results<'a>(s: State<'a>) {
+fn process_results(s: State) {
     let time_stat : f64 = if s.times.len() != 0 {
         compute_median(s.times)
     } else {
@@ -492,8 +529,8 @@ fn process_results<'a>(s: State<'a>) {
     let total_trials = s.incorrect + s.correct;
     let rate : f64 = if total_trials != 0 {
         100.
-      * from_uint(s.correct)     .expect("Number of correct trials can't be converted to f64")
-      / from_uint(total_trials).expect("Total number of trials can't be converted to f64")
+      * s.correct as f64
+      / total_trials as f64
     } else {
         0.
     };
@@ -510,50 +547,41 @@ fn process_results<'a>(s: State<'a>) {
     write_records(recs);
 }
 
-#[deriving(Show)]
+#[derive(Debug, RustcDecodable)]
 struct Record {
-    points: int,
+    points: isize,
     player: String,
 }
 
 
 fn read_records() -> Vec<Record> {
-    use std::io::BufferedReader;
-    use std::io::File;
+    use std::io::BufReader;
+    use std::fs::File;
+    use std::io::Read;
+    use rustc_serialize::json;
 
     let path = Path::new("records");
-    let mut file = BufferedReader::new(File::open(&path));
-    let mut records: Vec<Record> = vec![];
+    let mut file = BufReader::new(File::open(&path).unwrap());
+    let mut buffer = String::new();
 
-    loop {
-        let record : Record;
-        let res = scanln_from! {
-            &mut file,
-            "player: \"" player: &str "\", points: \"" points: int "\"" => {
-                record = Record { player : player.to_string(),
-                                  points : points };
-                records.push(record)
-            },
-        };
-        match res {
-            Ok(_) => {
-                info!("Read and parsed a record.");
-            },
-            Err(_) => break,
-        }
-    }
+    file.read_to_string(&mut buffer).unwrap();
+
+    let decode_result: json::DecodeResult<Vec<Record>> = json::decode(&buffer);
+    let records = decode_result.unwrap();
 
     records
 }
 
 
-fn insert_record(recs: &mut Vec<Record>, saved: Option<Record>, new: int) {
-    let mut stdin = std::io::stdio::stdin();
+fn insert_record(recs: &mut Vec<Record>, saved: Option<Record>, new: isize) {
+    let mut stdin = std::io::stdin();
     print!("Enter your name: ");
-    let line = stdin.read_line();
+    let mut string = String::new();
+    let line = stdin.read_line(&mut string);
     match line {
-        Ok(line) => {
-            let name = line.as_slice().trim_chars(['\r', '\n'].as_slice());
+        Ok(_) => {
+            let newlines: &[_] = &['\r', '\n'];
+            let name = &string.trim_matches(newlines);
             let name_ = name.to_string();
 
             recs.push( Record { points: new, player: name_ } );
@@ -571,11 +599,11 @@ fn insert_record(recs: &mut Vec<Record>, saved: Option<Record>, new: int) {
 }
 
 
-fn process_records(recs: &mut Vec<Record>, new : int) {
+fn process_records(recs: &mut Vec<Record>, new : isize) {
     let n = recs.len();
     if n >= 10 {
         match &mut recs[n - 1] {
-            &Record { points: old, .. } => {
+            &mut Record { points: old, .. } => {
                 if old < new {
                     let saved = recs.pop();
 
@@ -590,9 +618,10 @@ fn process_records(recs: &mut Vec<Record>, new : int) {
 
 
 fn write_records(recs: Vec<Record>) {
-    use std::io::File;
+    use std::fs::File;
+    use std::io::Write;
 
-    let mut file = File::create(&Path::new("records"));
+    let mut file = File::create(&Path::new("records")).unwrap();
     for r in recs.iter() {
         match r {
             &Record { ref player, points } => {
