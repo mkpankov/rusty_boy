@@ -2,7 +2,7 @@
 name = "rusty_boy"
 version = "0.0.1"
 dependencies = [
- "bread 0.0.1 (git+https://github.com/mkpankov/bread.git)",
+ "bread 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "env_logger 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "num 0.1.25 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -14,10 +14,10 @@ dependencies = [
 
 [[package]]
 name = "bread"
-version = "0.0.1"
-source = "git+https://github.com/mkpankov/bread.git#570970b0a0066c3566bb658540a291baebe92735"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "term 0.2.7 (git+https://github.com/rust-lang/term.git)",
+ "term 0.2.7 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -89,15 +89,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 name = "rustc-serialize"
 version = "0.3.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-
-[[package]]
-name = "term"
-version = "0.2.7"
-source = "git+https://github.com/rust-lang/term.git#6822aed1980f572f5d241c7bacf6971b5e2775ed"
-dependencies = [
- "kernel32-sys 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "winapi 0.1.20 (registry+https://github.com/rust-lang/crates.io-index)",
-]
 
 [[package]]
 name = "term"

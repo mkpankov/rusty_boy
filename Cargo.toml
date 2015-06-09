@@ -16,4 +16,4 @@ time = "0.1"
 
 [dependencies.bread]
 
-git = "https://github.com/mkpankov/bread.git"
+version = "0.1"
