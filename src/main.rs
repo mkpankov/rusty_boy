@@ -19,6 +19,8 @@ use std::io;
 use std::path::Path;
 use time::precise_time_ns;
 
+use std::io::{Read, Write};
+
 static BASE_POINTS: isize = 1isize;
 
 fn time_multiplier(time: f64) -> f64 {
@@ -211,7 +213,6 @@ fn do_output(s: &State, sm: &SymbolMap,
 
     match maybe_term {
         None => {
-            use std::io::Write;
             let mut stdout = std::io::stdout();
             print!("{:1}", mark);
             stdout.flush().unwrap();
@@ -316,8 +317,6 @@ struct State {
 }
 
 fn read_level(path: &std::path::PathBuf) -> Result<Level, String> {
-    use std::io::Read;
-
     let mut file = match std::fs::File::open(&path) {
         Err(why) =>
             return Err(format!("couldn't open {}: {}", path.display(), why)),
@@ -385,8 +384,6 @@ fn setup_game<'a>(l: Level) -> Game {
 
 
 fn choose_load_level() -> Result<Level, String> {
-    use std::io::Write;
-
     let maybe_level;
     let level_dir = Path::new(".");
     let maybe_files = std::fs::read_dir(&level_dir);
@@ -457,7 +454,6 @@ fn main() {
 
     loop {
         use rand::distributions::IndependentSample;
-        use std::io::Write;
 
         let a = game.ranges_operands[0].ind_sample(&mut game.rng_a);
         let b = game.ranges_operands[1].ind_sample(&mut game.rng_b);
@@ -534,7 +530,6 @@ struct Record {
 fn read_records() -> Vec<Record> {
     use std::io::BufReader;
     use std::fs::File;
-    use std::io::Read;
     use rustc_serialize::json;
 
     let path = Path::new("records");
@@ -559,8 +554,6 @@ fn read_records() -> Vec<Record> {
 
 
 fn insert_record(recs: &mut Vec<Record>, saved: Option<Record>, new: isize) {
-    use std::io::Write;
-
     let mut stdin = std::io::stdin();
     let mut stdout = std::io::stdout();
     print!("Enter your name: ");
@@ -608,7 +601,6 @@ fn process_records(recs: &mut Vec<Record>, new : isize) {
 
 fn write_records(recs: Vec<Record>) {
     use std::fs::File;
-    use std::io::Write;
 
     let mut file = File::create(&Path::new("records")).unwrap();
 
