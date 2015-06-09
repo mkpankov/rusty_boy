@@ -245,7 +245,7 @@ fn do_output(s: &State, sm: &SymbolMap,
             use std::io::Write;
             let mut stdout = std::io::stdout();
             print!("{:1}", mark);
-            stdout.flush();
+            stdout.flush().unwrap();
             println!("{:47}{:32}", message, new_score);
         },
         Some(ref mut term) => {
@@ -438,7 +438,7 @@ fn choose_load_level() -> Result<Level, String> {
             }
             let mut stdout = std::io::stdout();
             print!("Select one: ");
-            stdout.flush();
+            stdout.flush().unwrap();
 
             let mut string = String::new();
             let result = io::stdin().read_line(&mut string);
@@ -497,7 +497,7 @@ fn main() {
 
         let mut stdout = std::io::stdout();
         print!("{}   {} {} {} = ", sm.invitation, a, description, b);
-        stdout.flush();
+        stdout.flush().unwrap();
 
         let start = precise_time_ns();
         let mut string = String::new();
@@ -555,7 +555,7 @@ fn process_results(s: State) {
     write_records(recs);
 }
 
-#[derive(Debug, RustcDecodable)]
+#[derive(Debug, RustcDecodable, RustcEncodable)]
 struct Record {
     points: isize,
     player: String,
@@ -569,15 +569,23 @@ fn read_records() -> Vec<Record> {
     use rustc_serialize::json;
 
     let path = Path::new("records");
-    let mut file = BufReader::new(File::open(&path).unwrap());
-    let mut buffer = String::new();
+    let file = File::open(&path);
+    match file {
+        Ok(file) => {
+            let mut reader = BufReader::new(file);
+            let mut buffer = String::new();
 
-    file.read_to_string(&mut buffer).unwrap();
+            reader.read_to_string(&mut buffer).unwrap();
 
-    let decode_result: json::DecodeResult<Vec<Record>> = json::decode(&buffer);
-    let records = decode_result.unwrap();
+            let decode_result: json::DecodeResult<Vec<Record>> = json::decode(&buffer);
+            let records = decode_result.unwrap();
 
-    records
+            records
+        }
+        Err(_) => {
+            Vec::new()
+        }
+    }
 }
 
 
@@ -587,7 +595,7 @@ fn insert_record(recs: &mut Vec<Record>, saved: Option<Record>, new: isize) {
     let mut stdin = std::io::stdin();
     let mut stdout = std::io::stdout();
     print!("Enter your name: ");
-    stdout.flush();
+    stdout.flush().unwrap();
     let mut string = String::new();
     let line = stdin.read_line(&mut string);
     match line {
@@ -634,13 +642,8 @@ fn write_records(recs: Vec<Record>) {
     use std::io::Write;
 
     let mut file = File::create(&Path::new("records")).unwrap();
-    for r in recs.iter() {
-        match r {
-            &Record { ref player, points } => {
-                let line = format!("player: \"{}\", points: \"{}\"\n",
-                                   *player, points);
-                file.write(line.as_bytes()).unwrap();
-            }
-        }
-    }
+
+    let records_encoded: String =
+        json::encode(&recs).unwrap();
+    file.write(&records_encoded.into_bytes()).unwrap();
 }
