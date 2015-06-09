@@ -11,7 +11,6 @@ extern crate rustc_serialize;
 extern crate term;
 extern crate time;
 
-use rand::Rng;
 use rand::distributions::range::Range;
 use rand::ThreadRng;
 
@@ -111,36 +110,6 @@ fn setup_symbols<'a>() -> SymbolMap<'a> {
         }
     }
 }
-
-#[derive(PartialEq, Eq, PartialOrd, Ord, Debug)]
-enum Kind {
-    Add_ = 0,
-    Sub_,
-    Mul_,
-}
-
-
-impl From<usize> for Kind {
-    fn from(x: usize) -> Kind {
-        use Kind::*;
-        match x {
-            0 => Add_,
-            1 => Sub_,
-            2 => Mul_,
-            _ => panic!("can't convert it"),
-        }
-    }
-}
-
-
-fn rand_kind<R: Rng>(low: Kind, high: Kind, rng: &mut R) -> Kind {
-    use rand::distributions::IndependentSample;
-
-    let r = Range::new(low as usize, high as usize);
-    let n: usize = r.ind_sample(rng);
-    Kind::from(n)
-}
-
 
 fn handle_input<'a>(
     r: Round,
